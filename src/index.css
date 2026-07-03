@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  
+  /* Color Palette matching guidelines */
+  --color-bns-navy: #0B2545;
+  --color-bns-blue: #1B5FA8;
+  --color-bns-blue-light: #2272C3;
+  --color-bns-accent: #F5A623;
+  --color-bns-bg: #F7F9FC;
+  --color-bns-text-primary: #1A1A18;
+  --color-bns-text-secondary: #73726C;
+  --color-bns-text-tertiary: #9C9A92;
+  --color-text-primary: #1A1A18;
+  --color-text-secondary: #73726C;
+  --color-text-tertiary: #9C9A92;
+  --color-text-info: #185FA5;
+  --color-text-success: #1D9E75;
+  --color-text-warning: #854F0B;
+  --color-text-danger: #A32D2D;
+  --color-text-success-dark: #3B6D11;
+}
+
+/* Custom CSS styles for smooth scroll & active behaviors */
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+}
+
+body {
+  background-color: var(--color-bns-bg);
+  color: var(--color-bns-text);
+  overflow-x: hidden;
+}
+
+/* Custom animated grid for the Hero */
+.hero-grid {
+  background-image: 
+    linear-gradient(rgba(27, 95, 168, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27, 95, 168, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Dot pulse effect */
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.6;
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}

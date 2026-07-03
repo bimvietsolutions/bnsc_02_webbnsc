@@ -1,0 +1,6 @@
+{
+  "name": "BNSC Software Website",
+  "description": "Redesigned modern website for Bắc Nam Software (BNSC). Solutions for construction estimation, single prices consulting, and professional training.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
