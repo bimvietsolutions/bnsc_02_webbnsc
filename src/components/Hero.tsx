@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Play, Compass, Settings, Eye, MessageSquare, Calendar, User } from 'lucide-react';
 import { heroStats } from '../data';
-
-const meetingGialai = '/src/assets/images/meeting_gialai_1780475955997.png';
-const trainingLamdong = '/src/assets/images/training_lamdong_1780475975608.png';
+import meetingGialai from '../assets/images/meeting_gialai_1780475955997.png';
+import trainingLamdong from '../assets/images/training_lamdong_1780475975608.png';
 
 interface HeroProps {
   onDownloadClick: () => void;

@@ -1,0 +1,14 @@
+.git
+.github
+node_modules
+dist
+build
+coverage
+.env*
+!.env.example
+setup
+audit
+plan
+*.log
+*_github_actions*
+*.pem

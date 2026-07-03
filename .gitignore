@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+setup/
+*_github_actions
+*_github_actions.pub
+*.pem

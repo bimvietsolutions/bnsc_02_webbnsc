@@ -1,0 +1,146 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ${{ secrets.REGISTRY_URL }}/bimvietsolutions/bnsc_02_webbnsc
+  APP_CONTAINER: bnsc_demobnsc_app
+  APP_ENV_FILE: /home/deploy_demobnsc/app/.env
+  APP_NETWORK: pgnet
+
+jobs:
+  verify:
+    name: Verify source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run lint
+
+      - name: Build application
+        run: npm run build
+
+  build-and-push:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Log in to private registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ secrets.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASS }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+    steps:
+      - name: Deploy immutable image over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          APP_CONTAINER: ${{ env.APP_CONTAINER }}
+          APP_ENV_FILE: ${{ env.APP_ENV_FILE }}
+          APP_NETWORK: ${{ env.APP_NETWORK }}
+          REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASS: ${{ secrets.REGISTRY_PASS }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: IMAGE,APP_CONTAINER,APP_ENV_FILE,APP_NETWORK,REGISTRY_URL,REGISTRY_USER,REGISTRY_PASS
+          command_timeout: 15m
+          script_stop: true
+          script: |
+            set -eu
+
+            PREVIOUS_CONTAINER="${APP_CONTAINER}_previous"
+            echo "${REGISTRY_PASS}" | docker login "${REGISTRY_URL}" -u "${REGISTRY_USER}" --password-stdin
+            docker pull "${IMAGE}"
+
+            docker rm -f "${PREVIOUS_CONTAINER}" 2>/dev/null || true
+            if docker container inspect "${APP_CONTAINER}" >/dev/null 2>&1; then
+              docker stop "${APP_CONTAINER}"
+              docker rename "${APP_CONTAINER}" "${PREVIOUS_CONTAINER}"
+            fi
+
+            rollback() {
+              docker rm -f "${APP_CONTAINER}" 2>/dev/null || true
+              if docker container inspect "${PREVIOUS_CONTAINER}" >/dev/null 2>&1; then
+                docker rename "${PREVIOUS_CONTAINER}" "${APP_CONTAINER}"
+                docker start "${APP_CONTAINER}"
+              fi
+            }
+
+            if ! docker run -d \
+              --name "${APP_CONTAINER}" \
+              --network "${APP_NETWORK}" \
+              --restart unless-stopped \
+              --env-file "${APP_ENV_FILE}" \
+              --label "com.bnsc.git-sha=${{ github.sha }}" \
+              "${IMAGE}"; then
+              rollback
+              exit 1
+            fi
+
+            HEALTHY=false
+            for attempt in $(seq 1 30); do
+              if docker exec "${APP_CONTAINER}" node -e \
+                "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+                HEALTHY=true
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "${HEALTHY}" != "true" ]; then
+              docker logs --tail=200 "${APP_CONTAINER}" || true
+              rollback
+              exit 1
+            fi
+
+            docker exec caddy caddy validate --config /etc/caddy/Caddyfile
+            docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+            docker ps --filter "name=^/${APP_CONTAINER}$"

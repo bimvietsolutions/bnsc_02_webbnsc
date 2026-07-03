@@ -8,10 +8,15 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT || 3000);
 
   // Middlewares
-  app.use(express.json());
+  app.disable("x-powered-by");
+  app.use(express.json({ limit: "256kb" }));
+
+  app.get("/health/live", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
 
   // Ensure Gemini Client is initialized safely
   let ai: GoogleGenAI | null = null;
@@ -109,9 +114,28 @@ Lời khuyên cho bạn:
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`BNSC Server is running on port ${PORT}`);
   });
+
+  const shutdown = (signal: string) => {
+    console.log(`${signal} received. Shutting down gracefully.`);
+    server.close((error) => {
+      if (error) {
+        console.error("Failed to close HTTP server:", error);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+
+    setTimeout(() => {
+      console.error("Graceful shutdown timed out.");
+      process.exit(1);
+    }, 10_000).unref();
+  };
+
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 }
 
 startServer();
