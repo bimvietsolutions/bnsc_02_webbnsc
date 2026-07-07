@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Settings, Play, ShieldAlert, FileCheck, HelpCircle, BookOpen, User, Calendar, Eye, Search, ChevronRight } from 'lucide-react';
-import { libraryArticles, type LibraryArticle } from '../data/library';
+import { useApi } from '../lib/api';
+import { libraryFallback, mapLibrary, type ApiLibrary } from '../lib/publicData';
 
-type LibraryItem = LibraryArticle;
+type LibraryItem = ApiLibrary;
 
 export default function EstimationLibrary() {
   const navigate = useNavigate();
+  const { data: libraryItems } = useApi('/api/public/library', libraryFallback, mapLibrary);
   const [activeTab, setActiveTab] = useState<string>('Tất cả');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [visibleCount, setVisibleCount] = useState<number>(8);
@@ -20,8 +22,6 @@ export default function EstimationLibrary() {
     { name: 'Tình huống khác', emoji: '💡' },
     { name: 'Lập Dự toán - Dự thầu', emoji: '📋' }
   ];
-
-  const libraryItems: LibraryItem[] = libraryArticles;
 
   // Map category to color scheme specifications
   const getCategoryClass = (category: string) => {
@@ -66,13 +66,13 @@ export default function EstimationLibrary() {
     }
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      list = list.filter(item => 
-        item.title.toLowerCase().includes(q) || 
-        item.author.toLowerCase().includes(q)
+      list = list.filter(item =>
+        item.title.toLowerCase().includes(q) ||
+        (item.author ?? '').toLowerCase().includes(q)
       );
     }
     return list;
-  }, [activeTab, searchQuery]);
+  }, [libraryItems, activeTab, searchQuery]);
 
   const displayedItems = useMemo(() => {
     return filteredItems.slice(0, visibleCount);

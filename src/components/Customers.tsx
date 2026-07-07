@@ -1,8 +1,10 @@
 import React from 'react';
 import { Building2, Landmark, TowerControl, ShieldCheck, HeartPulse } from 'lucide-react';
-import { customersList } from '../data';
+import { useApi } from '../lib/api';
+import { customersFallback } from '../lib/publicData';
 
 export default function Customers() {
+  const { data: customersList } = useApi('/api/public/customers', customersFallback);
   // Mini icon helpers for local client classifications
   const getClientIcon = (name: string) => {
     const size = "w-5 h-5 text-[#F5A623] shrink-0";

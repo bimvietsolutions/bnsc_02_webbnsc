@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, X, Download } from 'lucide-react';
+import { useApi } from '../lib/api';
+import { settingsFallback } from '../lib/publicData';
 
 interface AnnouncementBarProps {
   onDownloadClick: () => void;
@@ -7,8 +9,14 @@ interface AnnouncementBarProps {
 
 export default function AnnouncementBar({ onDownloadClick }: AnnouncementBarProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const { data: settings } = useApi('/api/public/settings', settingsFallback);
 
-  if (!isVisible) return null;
+  const enabled = (settings.announcement_enabled ?? 'true') !== 'false';
+  const text =
+    settings.announcement_text ||
+    'Chính thức phát hành Dự toán BNSC v1.20 với nhiều cập nhật định mức đột phá!';
+
+  if (!isVisible || !enabled) return null;
 
   return (
     <div 
@@ -19,9 +27,7 @@ export default function AnnouncementBar({ onDownloadClick }: AnnouncementBarProp
         <span className="inline-flex items-center gap-1.5 bg-[#0B2545] text-[#F5A623] text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
           <Sparkles className="w-3 h-3 animate-pulse" /> Phiên bản mới
         </span>
-        <span className="text-[#0B2545]/90">
-          Chính thức phát hành <strong className="font-bold text-[#0B2545]">Dự toán BNSC v1.20</strong> với nhiều cập nhật định mức đột phá!
-        </span>
+        <span className="text-[#0B2545]/90">{text}</span>
         <button 
           onClick={onDownloadClick}
           className="inline-flex items-center gap-1 font-bold underline hover:text-[#0B2545]/80 transition-colors bg-transparent border-none cursor-pointer ml-1 text-sm decoration-2"

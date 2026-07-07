@@ -1,10 +1,12 @@
 import React from 'react';
 import { Laptop, Scale, GraduationCap, Check, HelpCircle, FileSpreadsheet, ArrowUpRight } from 'lucide-react';
-import { products } from '../data';
 import { useUiActions } from '../context/UiActions';
+import { useApi } from '../lib/api';
+import { productsFallback, mapProducts } from '../lib/publicData';
 
 export default function Products() {
   const { openDownload, openConsult } = useUiActions();
+  const { data: products } = useApi('/api/public/products', productsFallback, mapProducts);
 
   const onProductCtaClick = (productId: string) => {
     if (productId === 'du-toan-bnsc') {

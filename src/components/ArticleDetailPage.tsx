@@ -10,6 +10,9 @@ import { getLibraryBySlug, libraryArticles } from '../data/library';
 import { useUiActions } from '../context/UiActions';
 import Seo from '../seo/Seo';
 import NotFoundPage from '../pages/NotFoundPage';
+import PageLoader from './PageLoader';
+import { useApi } from '../lib/api';
+import { mapLibraryOne, type ApiLibrary } from '../lib/publicData';
 import { breadcrumbSchema, articleSchema } from '../seo/structuredData';
 
 interface Article {
@@ -104,7 +107,12 @@ export default function ArticleDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { openDownload } = useUiActions();
-  const article = slug ? getLibraryBySlug(slug) : undefined;
+  const staticArticle = (slug ? getLibraryBySlug(slug) : undefined) as ApiLibrary | undefined;
+  const { data: article, loading: articleLoading } = useApi<ApiLibrary | null>(
+    slug ? `/api/public/library/${slug}` : null,
+    staticArticle ?? null,
+    mapLibraryOne,
+  );
 
   const onBackToHome = () => navigate('/thu-vien');
   const onDownloadCtaClick = () => openDownload();
@@ -210,6 +218,9 @@ export default function ArticleDetailPage() {
     });
   };
 
+  if (articleLoading && !article) {
+    return <PageLoader />;
+  }
   if (!article) {
     return <NotFoundPage />;
   }
@@ -224,7 +235,7 @@ export default function ArticleDetailPage() {
         title={article.title}
         description={article.summary}
         path={`/thu-vien/${article.slug}`}
-        image={article.imageUrl}
+        image={article.imageUrl ?? undefined}
         type="article"
         jsonLd={[
           breadcrumbSchema([
@@ -236,7 +247,7 @@ export default function ArticleDetailPage() {
             title: article.title,
             description: article.summary,
             path: `/thu-vien/${article.slug}`,
-            image: article.imageUrl,
+            image: article.imageUrl ?? undefined,
             author: article.author,
           }),
         ]}
@@ -446,9 +457,9 @@ export default function ArticleDetailPage() {
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                   <span className="flex items-center gap-1.5 font-medium text-[#1A1A18]">
                     <span className="w-6 h-6 rounded-full bg-[#1B5FA8] text-white text-[10px] flex items-center justify-center font-medium">
-                      {article.author.slice(0, 2).toUpperCase()}
+                      {(article.author ?? 'BNSC').slice(0, 2).toUpperCase()}
                     </span>
-                    <span>{article.author}</span>
+                    <span>{article.author ?? 'BNSC'}</span>
                   </span>
                   <span className="text-gray-300">•</span>
                   <span className="flex items-center gap-1">

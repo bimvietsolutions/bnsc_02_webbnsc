@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Laptop, ShieldCheck, Download, Loader2, Play, Users, MapPin, Send, HelpCircle } from 'lucide-react';
+import { apiSend } from '../lib/api';
 
 interface InteractiveModalProps {
   isOpen: boolean;
@@ -55,6 +56,29 @@ export default function InteractiveModal({ isOpen, onClose, initialTab = 'downlo
     }
 
     setIsSubmitting(true);
+
+    // Lưu lead về DB (không chặn luồng UX mô phỏng bên dưới).
+    const typeMap: Record<string, 'DOWNLOAD' | 'REGISTER' | 'CONSULT'> = {
+      download: 'DOWNLOAD',
+      register: 'REGISTER',
+      consult: 'CONSULT',
+    };
+    const leadType = typeMap[activeTab];
+    if (leadType) {
+      apiSend('/api/public/leads', 'POST', {
+        type: leadType,
+        fullName,
+        phone,
+        email,
+        province,
+        company,
+        productSlug: selectedProductId || undefined,
+        courseSlug: activeTab === 'consult' ? course : undefined,
+        source: `modal:${activeTab}`,
+      }).catch(() => {
+        /* im lặng: vẫn giữ trải nghiệm nếu API lỗi */
+      });
+    }
 
     if (activeTab === 'download') {
       // Simulate file download bar increments

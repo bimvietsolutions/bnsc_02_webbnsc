@@ -18,6 +18,8 @@ import {
   X
 } from 'lucide-react';
 import Seo from '../seo/Seo';
+import { useApi } from '../lib/api';
+import { supportFallback, faqsSupportFallback } from '../lib/publicData';
 
 export default function TechnicalSupportPage() {
   const navigate = useNavigate();
@@ -47,35 +49,11 @@ export default function TechnicalSupportPage() {
     };
   }, []);
 
-  const supportStaff = [
-    { name: 'Kỹ sư Hoàng Lâm', phone: '0966966455', role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
-    { name: 'Kỹ sư Quốc Khánh', phone: '0981757527', role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
-    { name: 'Kỹ sư Minh Đức', phone: '0903310052', role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
-  ];
-
-  const remoteTools = [
-    {
-      name: 'UltraViewer (Khuyên dùng)',
-      desc: 'Phần mềm điều khiển máy tính xa cực nhẹ, phổ biến nhất tại Việt Nam. Được đội ngũ BNSC sử dụng để cài đặt trực tiếp cho khách hàng.',
-      version: 'v6.6 (Bản mới nhất)',
-      url: 'https://www.ultraviewer.net/vi/download.html',
-      badge: 'Bao gồm bộ cài sửa lỗi'
-    },
-    {
-      name: 'TeamViewer Toàn cầu',
-      desc: 'Công cụ kết nối từ xa tiêu chuẩn quốc tế ổn định cao. Thích hợp cho doanh nghiệp có chính sách bảo mật mạng nội bộ nghiêm ngặt.',
-      version: 'Bản Portable không cần cài',
-      url: 'https://vchat.vn/service/embed.js?v=68051', // Fallback or direct teamviewer portal
-      realUrl: 'https://www.teamviewer.com/vi/download/windows/',
-      badge: 'Kết nối mã hóa AES-256'
-    }
-  ];
-
-  const faqItems = [
-    { q: 'Làm thế nào để kích hoạt bản quyền BNSC khi có khóa cứng?', a: 'Anh/chị vui lòng cắm khóa cứng USB vào máy tính, mở phần mềm Dự toán BNSC lên, hệ thống sẽ tự động nhận diện Key bản quyền. Nếu hiện thông báo "Chưa có thiết bị", hãy gọi tổng đài kỹ thuật để nhận Driver hỗ trợ.' },
-    { q: 'Phần mềm Dự toán BNSC có chạy được trên Excel 64-bit không?', a: 'Dự toán BNSC chạy ổn định 100% trên cả Excel 32-bit và Excel 64-bit (từ phiên bản Office 2013 đến Office 365 mới nhất hiện nay).' },
-    { q: 'Làm sao để cập nhật đơn giá, định mức các Tỉnh thành mới nhất?', a: 'Mở phần mềm BNSC -> Chọn menu "Tính năng" -> Click "Tải đơn giá" -> Chọn Tỉnh thành cần làm việc và nhấn tải về hoàn toàn miễn phí.' }
-  ];
+  const { data: support } = useApi('/api/public/support', supportFallback);
+  const { data: faqRows } = useApi('/api/public/faqs?scope=SUPPORT', faqsSupportFallback);
+  const supportStaff = support.staff;
+  const remoteTools = support.tools.map((t) => ({ ...t, desc: t.description }));
+  const faqItems = faqRows.map((f) => ({ q: f.question, a: f.answer }));
 
   const handleCopyPhone = (num: string) => {
     navigator.clipboard.writeText(num);

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, User, ArrowRight, ShieldCheck, ChevronDown } from 'lucide-react';
-import { navLinks } from '../data';
 import { scrollToId } from '../utils/scroll';
+import { useApi } from '../lib/api';
+import { navFallback } from '../lib/publicData';
 
 interface NavbarProps {
   onDownloadClick: () => void;
@@ -10,17 +11,10 @@ interface NavbarProps {
   onRegisterClick: () => void;
 }
 
-const softwareDropdownItems = [
-  { name: 'Dự toán BNSC', href: '#du-toan' },
-  { name: 'Quản lý Dự án BNSC', href: '#du-toan' },
-  { name: 'Quản lý tiến độ BNSC', href: '#du-toan' },
-  { name: 'Quản lý Vốn', href: '#du-toan' },
-  { name: 'Phần mềm theo đơn đặt hàng', href: '#du-toan' }
-];
-
 export default function Navbar({ onDownloadClick, onLoginClick, onRegisterClick }: NavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: navLinks } = useApi('/api/public/nav', navFallback);
   const [activeSection, setActiveSection] = useState('trang-chu');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -141,7 +135,7 @@ export default function Navbar({ onDownloadClick, onLoginClick, onRegisterClick 
                         : 'opacity-0 -translate-y-1 invisible pointer-events-none'
                     }`}>
                       <div className="bg-white border border-slate-100 rounded-xl shadow-lg py-2.5">
-                        {softwareDropdownItems.map((item) => (
+                        {(link.children ?? []).map((item) => (
                           <a
                             key={item.name}
                             href={item.href}
@@ -252,7 +246,7 @@ export default function Navbar({ onDownloadClick, onLoginClick, onRegisterClick 
                     {/* Collapsible Submenu List */}
                     {isMobileDropdownOpen && (
                       <div className="pl-4 pr-2 flex flex-col gap-1 mt-1 border-l-2 border-slate-100 ml-4">
-                        {softwareDropdownItems.map((item) => (
+                        {(link.children ?? []).map((item) => (
                           <a
                             key={item.name}
                             href={item.href}

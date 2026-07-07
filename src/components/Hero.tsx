@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Play, Compass, Settings, Eye, MessageSquare, Calendar, User } from 'lucide-react';
-import { heroStats } from '../data';
 import { useUiActions } from '../context/UiActions';
 import { SAMPLE_ARTICLE_SLUG } from '../data/library';
 import { scrollToId } from '../utils/scroll';
-import meetingGialai from '../assets/images/meeting_gialai_1780475955997.png';
-import trainingLamdong from '../assets/images/training_lamdong_1780475975608.png';
+import { useApi } from '../lib/api';
+import { heroFallback } from '../lib/publicData';
 
 export default function Hero() {
   const navigate = useNavigate();
@@ -14,24 +13,11 @@ export default function Hero() {
   const onDownloadClick = () => openDownload();
   const onVideoClick = () => scrollToId('tu-van');
   const onArticleClick = () => navigate(`/thu-vien/${SAMPLE_ARTICLE_SLUG}`);
-  // Slides configuration
-  const slides = [
-    {
-      id: 1,
-      image: meetingGialai,
-      caption: 'SXD GIA LAI: Công bố Đơn giá NC & Giá CM năm 2025 do BNSC tư vấn thực hiện'
-    },
-    {
-      id: 2,
-      image: trainingLamdong,
-      caption: 'SXD LÂM ĐỒNG: Đào tạo & tập huấn nghiệp vụ phần mềm Dự toán BNSC mới nhất'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=800&auto=format&fit=crop',
-      caption: 'SXD KHÁNH HÒA: Ứng dụng phổ biến BNSC lập dự toán công trình giao thông cấp bách'
-    }
-  ];
+
+  // Hero (slide + số liệu) lấy từ API, fallback dữ liệu tĩnh.
+  const { data: hero } = useApi('/api/public/hero', heroFallback);
+  const slides = hero.slides;
+  const heroStats = hero.stats;
 
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -73,15 +59,15 @@ export default function Hero() {
               {/* Active Slide Image */}
               {slides.map((slide, idx) => (
                 <div
-                  key={slide.id}
+                  key={idx}
                   onClick={onArticleClick}
                   className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
                     idx === activeSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
                   }`}
                 >
-                  <img 
-                    src={slide.image} 
-                    alt={slide.caption} 
+                  <img
+                    src={slide.imageUrl}
+                    alt={slide.caption}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.015]"
                     referrerPolicy="no-referrer"
                   />

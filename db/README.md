@@ -134,19 +134,41 @@ npx prisma migrate diff --from-empty --to-schema-datamodel db/schema.prisma --sc
 npx tsx db/generate-sql.mts   # ghép DDL + INSERT -> db/db.sql
 ```
 
-## 4. Lộ trình kế tiếp (sau khi có DB)
+## 4. Vận hành (ĐÃ TRIỂN KHAI)
 
-1. **API đọc dữ liệu** — thêm route `/api/*` trong `server.ts` (Express) trả về
-   news/library/products… từ Prisma, thay cho việc import tĩnh `src/data`.
-2. **Chuyển frontend sang gọi API** — các trang list/detail fetch từ `/api`
-   thay vì import trực tiếp (giữ nguyên cấu trúc component & SEO đã có).
-3. **Lưu lead** — `POST /api/leads` khi submit modal; hiển thị trong admin.
-4. **Trang admin CRUD** — 2 hướng:
-   - Nhanh: dùng **AdminJS** (tự sinh CRUD từ Prisma) hoặc **prisma studio** nội bộ.
-   - Tùy biến: **React-Admin** + REST API riêng, đăng nhập bằng `admin_users`
-     (JWT + bcrypt).
-5. **Xác thực admin** — bảng `admin_users` đã sẵn (email + passwordHash bcrypt +
-   role ADMIN/EDITOR).
+Website đã đọc dữ liệu từ DB qua API, và có sẵn trang admin.
+
+### API (Express + Prisma)
+- `GET /api/public/*` — dữ liệu công khai cho site (settings, nav, hero, products,
+  news, library, consulting, faqs, customers, support). Frontend gọi qua
+  `src/lib/api.ts` với **fallback dữ liệu tĩnh** (mất DB vẫn không trắng trang).
+- `POST /api/public/leads` — nhận form Tải/Đăng ký/Tư vấn từ modal.
+- `POST /api/admin/auth/login|logout` + `GET /me` — đăng nhập admin (JWT trong
+  cookie httpOnly + bcrypt).
+- `/api/admin/resources/:resource` (+ `/:id`) — CRUD generic, yêu cầu đăng nhập.
+
+### Trang admin
+- Truy cập **`/admin`** (đăng nhập tại `/admin/login`). Giao diện quản trị toàn
+  bộ: tin tức, thư viện, sản phẩm, hero, khách hàng, tư vấn/khóa học, FAQ, hỗ
+  trợ, menu, danh mục, cấu hình site, **lead**, tài khoản admin.
+- Tạo admin đầu tiên:
+  ```bash
+  npm run db:create-admin -- admin@bacnam.com.vn "MatKhauManh123" "Quản trị viên"
+  ```
+- Đặt biến môi trường **`JWT_SECRET`** (chuỗi ngẫu nhiên dài) trong `.env`.
+
+### Trình tự triển khai đầy đủ trên VPS
+```bash
+npm ci
+docker compose -f db/docker-compose.yml up -d      # PostgreSQL
+cp db/.env.example .env                             # sửa DATABASE_URL + JWT_SECRET
+npm run db:deploy                                    # tạo bảng (prisma migrate deploy)
+npm run db:seed                                      # nạp nội dung ban đầu (tùy chọn)
+npm run db:create-admin -- admin@bacnam.com.vn "MatKhau" "Admin"
+npm run build                                        # prisma generate + vite + server
+NODE_ENV=production npm start
+```
+> `npm run build` cần Prisma Client đã generate. Nếu chưa, chạy `npm run db:generate`.
 
 ## 5. Ghi chú thiết kế
 

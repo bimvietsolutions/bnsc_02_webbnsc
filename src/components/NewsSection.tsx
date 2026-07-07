@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Eye, ArrowRight, BookOpen, ChevronRight, Search, X, User } from 'lucide-react';
-import { newsArticles, type NewsArticle } from '../data/news';
+import { useApi } from '../lib/api';
+import { newsFallback, mapNews, type ApiNews } from '../lib/publicData';
 
-type NewsItem = NewsArticle;
-
+type NewsItem = ApiNews;
 
 export default function NewsSection() {
   const navigate = useNavigate();
+  const { data: newsArticles } = useApi('/api/public/news', newsFallback, mapNews);
   const [selectedTab, setSelectedTab] = useState<string>('Tất cả');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('newest');
@@ -88,7 +89,7 @@ export default function NewsSection() {
     }
 
     return result;
-  }, [selectedTab, searchQuery, sortBy]);
+  }, [newsArticles, selectedTab, searchQuery, sortBy]);
 
   // Extract featured layout (1 Large card and 3 Stacked list cards)
   const { featuredItem, listItems, remainingGridItems } = useMemo(() => {

@@ -7,12 +7,21 @@ import { Calendar, Eye, User, ChevronRight, ArrowLeft } from 'lucide-react';
 import { getNewsBySlug, newsArticles } from '../data/news';
 import Seo from '../seo/Seo';
 import NotFoundPage from './NotFoundPage';
+import PageLoader from '../components/PageLoader';
+import { useApi } from '../lib/api';
+import { mapNewsOne, type ApiNews } from '../lib/publicData';
 import { breadcrumbSchema, articleSchema } from '../seo/structuredData';
 
 export default function NewsDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const article = slug ? getNewsBySlug(slug) : undefined;
+  const staticArticle = (slug ? getNewsBySlug(slug) : undefined) as ApiNews | undefined;
+  const { data: article, loading } = useApi<ApiNews | null>(
+    slug ? `/api/public/news/${slug}` : null,
+    staticArticle ?? null,
+    mapNewsOne,
+  );
 
+  if (loading && !article) return <PageLoader />;
   if (!article) return <NotFoundPage />;
 
   const related = newsArticles
@@ -25,7 +34,7 @@ export default function NewsDetailPage() {
         title={article.title}
         description={article.excerpt}
         path={`/tin-tuc/${article.slug}`}
-        image={article.imageUrl}
+        image={article.imageUrl ?? undefined}
         type="article"
         jsonLd={[
           breadcrumbSchema([
@@ -37,7 +46,7 @@ export default function NewsDetailPage() {
             title: article.title,
             description: article.excerpt,
             path: `/tin-tuc/${article.slug}`,
-            image: article.imageUrl,
+            image: article.imageUrl ?? undefined,
           }),
         ]}
       />

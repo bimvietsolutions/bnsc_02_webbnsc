@@ -18,6 +18,7 @@ const ArticleDetailPage = lazy(() => import('./components/ArticleDetailPage'));
 const LoginPage = lazy(() => import('./components/LoginPage'));
 const TechnicalSupportPage = lazy(() => import('./components/TechnicalSupportPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 export default function App() {
   return (
@@ -38,6 +39,9 @@ export default function App() {
           {/* Trang toàn màn hình */}
           <Route path="/dang-nhap" element={<LoginPage />} />
           <Route path="/ho-tro-ky-thuat" element={<TechnicalSupportPage />} />
+
+          {/* Khu vực quản trị (auth riêng, không dùng layout site) */}
+          <Route path="/admin/*" element={<AdminApp />} />
         </Routes>
       </Suspense>
     </>

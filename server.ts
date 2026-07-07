@@ -1,10 +1,22 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import { createAuthRouter } from "./server/auth";
+import { createPublicRouter } from "./server/routes.public";
+import { createAdminRouter } from "./server/routes.admin";
 
 dotenv.config();
+
+// Lưới an toàn: không để lỗi bất đồng bộ lẻ làm sập server.
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandledRejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("uncaughtException:", err);
+});
 
 async function startServer() {
   const app = express();
@@ -12,7 +24,8 @@ async function startServer() {
 
   // Middlewares
   app.disable("x-powered-by");
-  app.use(express.json({ limit: "256kb" }));
+  app.use(express.json({ limit: "1mb" }));
+  app.use(cookieParser());
 
   app.get("/health/live", (_req, res) => {
     res.status(200).json({ status: "ok" });
@@ -97,6 +110,18 @@ Lời khuyên cho bạn:
       console.error("Gemini service failed:", error);
       res.status(500).json({ error: "Đã xảy ra lỗi khi kết nối với máy chủ AI BNSC." });
     }
+  });
+
+  // API: xác thực admin, dữ liệu công khai, và quản trị (CRUD)
+  app.use("/api/admin/auth", createAuthRouter());
+  app.use("/api/public", createPublicRouter());
+  app.use("/api/admin", createAdminRouter());
+
+  // Bắt lỗi API (vd mất kết nối DB) -> trả JSON 500, không làm sập tiến trình.
+  app.use("/api", (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error("API error:", err?.message || err);
+    if (res.headersSent) return;
+    res.status(500).json({ error: "Lỗi máy chủ hoặc cơ sở dữ liệu." });
   });
 
   // Serve static assets / handle Vite in development

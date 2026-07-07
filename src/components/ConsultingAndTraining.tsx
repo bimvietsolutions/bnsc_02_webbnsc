@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 import { ShieldCheck, GraduationCap, Calendar, Users, MapPin, ArrowRight, Gavel, HelpCircle, FileText, CheckCircle } from 'lucide-react';
 import { useUiActions } from '../context/UiActions';
+import { useApi } from '../lib/api';
+import { consultingFallback, faqsHomeFallback } from '../lib/publicData';
+
+const consultIcon = (name?: string | null) => {
+  switch (name) {
+    case 'Gavel':
+      return <Gavel className="w-5 h-5 text-[#F5A623]" />;
+    case 'FileText':
+      return <FileText className="w-5 h-5 text-[#1B5FA8]" />;
+    default:
+      return <ShieldCheck className="w-5 h-5 text-[#1B5FA8]" />;
+  }
+};
 
 export default function ConsultingAndTraining() {
   const { openConsult } = useUiActions();
@@ -8,58 +21,26 @@ export default function ConsultingAndTraining() {
   // Frequently asked questions (FAQs) or consultative elements
   const [activeQuestion, setActiveQuestion] = useState<number | null>(0);
 
-  const consultations = [
-    {
-      title: 'Tư vấn Đơn giá Xây dựng & Máy thi công',
-      desc: 'Hỗ trợ các Sở Xây dựng khảo sát giá thị trường nhân công, tính toán nguyên lý giá ca máy bám sát Thông tư 11/2021/TT-BXD, số hóa đơn giá đưa lên máy chủ quốc gia.',
-      icon: <Gavel className="w-5 h-5 text-[#F5A623]" />
-    },
-    {
-      title: 'Xây dựng Định mức hạ tầng kỹ thuật đặc thù',
-      desc: 'Thiết lập định mức chi tiết cho các công tác xây lắp đặc thù địa phương (như duy tu hạ tầng kỹ thuật, cấp thoát nước, bảo dưỡng hạ tầng đường sắt) chưa có trong định mức Bộ Xây dựng.',
-      icon: <FileText className="w-5 h-5 text-[#1B5FA8]" />
-    }
-  ];
+  const { data: consulting } = useApi('/api/public/consulting', consultingFallback);
+  const { data: faqRows } = useApi('/api/public/faqs?scope=HOME', faqsHomeFallback);
 
-  const courses = [
-    {
-      id: 'dutoan-thucchien',
-      title: 'Lập Dự toán & Đo bóc khối lượng công trình',
-      date: 'Khai giảng ngày 15 hằng tháng',
-      duration: '12 buổi (Tối Thứ 2-4-6)',
-      type: 'Trực tiếp tại VP & Trực tuyến qua Zoom',
-      price: '1.800.000 VNĐ',
-      coupon: 'Giảm 15% khi thanh toán sớm',
-      slots: 'Chỉ còn 6 chỗ trống',
-      trainer: 'Kỹ sư cao cấp Vũ Hoàng Nam (Mạng đấu thầu BNSC)'
-    },
-    {
-      id: 'dauthau-mang',
-      title: 'Nghiệp vụ Đấu thầu qua mạng thế hệ mới',
-      date: 'Khai giảng ngày 20 hằng tháng',
-      duration: '4 buổi (Thứ 7 & Chủ Nhật)',
-      type: 'Trực tuyến Zoom có quay lưu bài giảng',
-      price: '1.200.000 VNĐ',
-      coupon: 'Tặng kèm giáo trình đấu thầu mới nhất',
-      slots: 'Chỉ còn 3 chỗ trống',
-      trainer: 'Thạc sĩ Phan Văn Đạt (Trọng tài viên Kinh tế XD)'
-    }
-  ];
-
-  const faqs = [
-    {
-      q: 'Phần mềm dự toán BNSC có xuất được bảng tính toán thép chi tiết không?',
-      a: 'Hoàn toàn được. BNSC tích hợp module đo bóc cốt thép chi tiết, cho phép liệt kê kích thước, đường kính, trọng lượng và tự động tổng hợp bảng thống kê hình dạng thép liên kết động sang Excel.'
-    },
-    {
-      q: 'Bộ đơn giá nhân công & ca máy do Bắc Nam tư vấn có tính pháp lý như thế nào?',
-      a: 'Bộ sở dữ liệu do BNSC xây dựng được thẩm định qua Hội đồng liên ngành Sở Tài chính - Sở Xây dựng và ban hành chính thức dưới Quyết định của UBND tỉnh, có giá trị pháp lý bắt buộc áp dụng trực tiếp.'
-    },
-    {
-      q: 'Tôi tự học có sử dụng được phần mềm không? Có tài liệu không?',
-      a: 'Rất dễ dàng. Bắc Nam cung cấp hệ thống video mẫu có thuyết minh từ cơ bản đến nâng cao, kết hợp tài liệu hướng dẫn file PDF 150 trang chi tiết từng bước. Ngoài ra chúng tôi hỗ trợ cài đặt qua UltraViewer miễn phí.'
-    }
-  ];
+  const consultations = consulting.services.map((s) => ({
+    title: s.title,
+    desc: s.description,
+    icon: consultIcon(s.iconName),
+  }));
+  const courses = consulting.courses.map((c) => ({
+    id: c.slug,
+    title: c.title,
+    date: c.scheduleText,
+    duration: c.duration,
+    type: c.format,
+    price: c.price,
+    coupon: c.coupon,
+    slots: c.slots,
+    trainer: c.trainer,
+  }));
+  const faqs = faqRows.map((f) => ({ q: f.question, a: f.answer }));
 
   return (
     <div className="bg-white">
