@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /dang-nhap
+
+Sitemap: https://bacnam.com.vn/sitemap.xml

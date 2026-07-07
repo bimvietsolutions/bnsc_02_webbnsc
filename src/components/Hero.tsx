@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Download, Play, Compass, Settings, Eye, MessageSquare, Calendar, User } from 'lucide-react';
 import { heroStats } from '../data';
+import { useUiActions } from '../context/UiActions';
+import { SAMPLE_ARTICLE_SLUG } from '../data/library';
+import { scrollToId } from '../utils/scroll';
 import meetingGialai from '../assets/images/meeting_gialai_1780475955997.png';
 import trainingLamdong from '../assets/images/training_lamdong_1780475975608.png';
 
-interface HeroProps {
-  onDownloadClick: () => void;
-  onVideoClick: () => void;
-  onArticleClick?: () => void;
-}
-
-export default function Hero({ onDownloadClick, onVideoClick, onArticleClick }: HeroProps) {
+export default function Hero() {
+  const navigate = useNavigate();
+  const { openDownload } = useUiActions();
+  const onDownloadClick = () => openDownload();
+  const onVideoClick = () => scrollToId('tu-van');
+  const onArticleClick = () => navigate(`/thu-vien/${SAMPLE_ARTICLE_SLUG}`);
   // Slides configuration
   const slides = [
     {

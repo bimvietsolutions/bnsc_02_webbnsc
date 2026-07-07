@@ -1,0 +1,25 @@
+# PostgreSQL cho BNSC – chạy trên VPS.
+#   docker compose -f db/docker-compose.yml up -d
+# Dữ liệu lưu ở volume bnsc_pgdata (bền vững qua các lần khởi động lại).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bnsc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bnsc
+      POSTGRES_PASSWORD: bnsc_secret # ĐỔI mật khẩu này trên môi trường thật
+      POSTGRES_DB: bnsc
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - '5432:5432' # cân nhắc bỏ publish ra ngoài nếu app cùng mạng Docker
+    volumes:
+      - bnsc_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bnsc -d bnsc']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  bnsc_pgdata:

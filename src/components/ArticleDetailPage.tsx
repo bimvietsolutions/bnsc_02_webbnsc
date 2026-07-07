@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ArrowLeft, FileText, Calendar, Eye, RefreshCw, User, MessageSquare, 
-  Share2, ThumbsUp, HelpCircle, ThumbsDown, Paperclip, Download, 
-  ChevronRight, ChevronDown, List, Film, Flame, Monitor, AlertCircle, 
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  ArrowLeft, FileText, Calendar, Eye, RefreshCw, User, MessageSquare,
+  Share2, ThumbsUp, HelpCircle, ThumbsDown, Paperclip, Download,
+  ChevronRight, ChevronDown, List, Film, Flame, Monitor, AlertCircle,
   Facebook, Copy, CheckCircle
 } from 'lucide-react';
+import { getLibraryBySlug, libraryArticles } from '../data/library';
+import { useUiActions } from '../context/UiActions';
+import Seo from '../seo/Seo';
+import NotFoundPage from '../pages/NotFoundPage';
+import { breadcrumbSchema, articleSchema } from '../seo/structuredData';
 
 interface Article {
   id: string;
@@ -94,12 +100,14 @@ const hotNews = [
   }
 ];
 
-interface ArticleDetailPageProps {
-  onBackToHome: () => void;
-  onDownloadCtaClick?: () => void;
-}
+export default function ArticleDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { openDownload } = useUiActions();
+  const article = slug ? getLibraryBySlug(slug) : undefined;
 
-export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: ArticleDetailPageProps) {
+  const onBackToHome = () => navigate('/thu-vien');
+  const onDownloadCtaClick = () => openDownload();
   // Reading percentage state
   const [scrollPercent, setScrollPercent] = useState(0);
   // Feedback click status ('like' | 'neutral' | 'dislike' | null)
@@ -192,19 +200,7 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
   };
 
   const handleNavToSection = (sectionId: string) => {
-    onBackToHome();
-    setTimeout(() => {
-      const el = document.getElementById(sectionId);
-      if (el) {
-        const topOffset = 100; // Height of sticky navbar + offset
-        const elementPosition = el.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.scrollY - topOffset;
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        });
-      }
-    }, 120);
+    navigate(`/#${sectionId}`);
   };
 
   const scrollToTop = () => {
@@ -214,7 +210,37 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
     });
   };
 
+  if (!article) {
+    return <NotFoundPage />;
+  }
+
+  const relatedInGroup = libraryArticles
+    .filter((a) => a.category === article.category && a.slug !== article.slug)
+    .slice(0, 3);
+
   return (
+    <>
+      <Seo
+        title={article.title}
+        description={article.summary}
+        path={`/thu-vien/${article.slug}`}
+        image={article.imageUrl}
+        type="article"
+        jsonLd={[
+          breadcrumbSchema([
+            { name: 'Trang chủ', path: '/' },
+            { name: 'Thư viện', path: '/thu-vien' },
+            { name: article.title, path: `/thu-vien/${article.slug}` },
+          ]),
+          articleSchema({
+            title: article.title,
+            description: article.summary,
+            path: `/thu-vien/${article.slug}`,
+            image: article.imageUrl,
+            author: article.author,
+          }),
+        ]}
+      />
     <div className="min-h-screen bg-[#F7F9FC] text-[#1A2332] selection:bg-[#F5A623]/30 selection:text-[#0B2545] font-sans pt-[72px] lg:pt-[80px]">
       
       {/* 3b. Reading progress bar fixed at the top (under sticky navbar) */}
@@ -240,33 +266,26 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
       <div className="bg-white border-b border-[#E2E8F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
           <nav className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-            <button 
-              onClick={onBackToHome}
+            <Link
+              to="/"
               className="hover:text-[#1B5FA8] transition-colors cursor-pointer text-gray-500"
             >
               Trang chủ
-            </button>
+            </Link>
             <span className="text-[#CBD5E1]">›</span>
-            <button 
-              onClick={() => handleNavToSection('du-toan')}
+            <Link
+              to="/thu-vien"
               className="hover:text-[#1B5FA8] transition-colors cursor-pointer text-gray-500"
             >
-              Dự toán BNSC
-            </button>
+              Thư viện
+            </Link>
             <span className="text-[#CBD5E1]">›</span>
-            <button 
-              onClick={() => handleNavToSection('thuvien-tinhhuong')}
-              className="hover:text-[#1B5FA8] transition-colors cursor-pointer text-gray-500"
-            >
-              Sử dụng
-            </button>
-            <span className="text-[#CBD5E1]">›</span>
-            <button 
+            <button
               onClick={scrollToTop}
               className="hover:text-[#1B5FA8] transition-colors cursor-pointer text-[#0B2545] font-semibold text-left truncate max-w-[150px] sm:max-w-none"
               title="Cuộn lên đầu bài viết"
             >
-              2.51 Lập Dự toán - Dự thầu...
+              {article.title}
             </button>
           </nav>
         </div>
@@ -415,34 +434,31 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
             {/* 3a. Header bài viết */}
             <div className="mb-6">
               <span className="inline-block bg-[rgba(40,167,69,0.12)] text-[#28a745] px-3 py-1 rounded-full text-[11px] font-medium uppercase tracking-[0.06em] mb-3.5 border border-[#28a745]/15">
-                🟢 Sử dụng phần mềm
+                🟢 {article.category}
               </span>
-              
+
               <h1 className="text-[24px] font-medium text-[#1A1A18] leading-[1.25] mb-4 tracking-[-0.02em]">
-                2.51 Lập Dự toán - Dự thầu xây dựng công trình
+                {article.title}
               </h1>
 
               {/* Meta information row */}
               <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-gray-150">
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                   <span className="flex items-center gap-1.5 font-medium text-[#1A1A18]">
-                    <span className="w-6 h-6 rounded-full bg-[#1B5FA8] text-white text-[10px] flex items-center justify-center font-medium">KT</span>
-                    <span>Khắc Tiệp</span>
+                    <span className="w-6 h-6 rounded-full bg-[#1B5FA8] text-white text-[10px] flex items-center justify-center font-medium">
+                      {article.author.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span>{article.author}</span>
                   </span>
                   <span className="text-gray-300">•</span>
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-slate-500 font-normal">2 Thg 6, 2025</span>
-                  </span>
-                  <span className="text-gray-300">•</span>
-                  <span className="flex items-center gap-1">
-                    <RefreshCw className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-slate-500 font-normal">CN: 13 Thg 8, 2025</span>
+                    <span className="text-slate-500 font-normal">{article.date}</span>
                   </span>
                   <span className="text-gray-300">•</span>
                   <span className="flex items-center gap-1">
                     <Eye className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-slate-500 font-normal">11,476</span>
+                    <span className="text-slate-500 font-normal">{article.views.toLocaleString()}</span>
                   </span>
                   <span className="text-gray-300">•</span>
                   <span className="flex items-center gap-1">
@@ -754,19 +770,17 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
               </h4>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {relatedArticles.map((rel) => (
-                  <article 
-                    key={rel.id} 
+                {relatedInGroup.map((rel) => (
+                  <Link
+                    key={rel.id}
+                    to={`/thu-vien/${rel.slug}`}
                     className="bg-white rounded-xl overflow-hidden border border-[#E2E8F0] hover:shadow-md transition-shadow group cursor-pointer text-left flex flex-col justify-between"
-                    onClick={() => {
-                      alert(`Đang tải dữ liệu hướng dẫn cùng nhóm: ${rel.title}`);
-                      window.scrollTo(0, 0);
-                    }}
                   >
                     <div className="aspect-video w-full bg-slate-100 relative overflow-hidden">
-                      <img 
-                        src={rel.imageUrl} 
+                      <img
+                        src={rel.imageUrl}
                         alt={rel.title}
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <span className="absolute top-2 left-2 bg-[#0B2545] text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase font-mono">
@@ -783,7 +797,7 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
                         <span>{rel.date}</span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -898,7 +912,7 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
           <div className="min-w-0 pr-3 text-left">
             <span className="text-[10px] text-[#28a745] font-bold uppercase block tracking-wider">Đang xem hướng dẫn</span>
             <span className="text-xs font-bold text-[#0B2545] truncate block">
-              2.51 Lập Dự toán - Dự thầu thầu...
+              {article.title}
             </span>
           </div>
 
@@ -913,5 +927,6 @@ export default function ArticleDetailPage({ onBackToHome, onDownloadCtaClick }: 
       )}
 
     </div>
+    </>
   );
 }

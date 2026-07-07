@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, ArrowLeft, Loader2, Smartphone, ShieldCheck, Mail, Lock } from 'lucide-react';
+import Seo from '../seo/Seo';
 
-interface LoginPageProps {
-  onBackToHome: () => void;
-  onRegisterClick?: () => void;
-}
-
-export default function LoginPage({ onBackToHome, onRegisterClick }: LoginPageProps) {
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const onBackToHome = () => navigate('/');
+  const onRegisterClick = () => navigate('/?modal=register');
   // Field values
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -63,6 +63,13 @@ export default function LoginPage({ onBackToHome, onRegisterClick }: LoginPagePr
   };
 
   return (
+    <>
+    <Seo
+      title="Đăng nhập"
+      description="Đăng nhập tài khoản Bắc Nam Software để đồng bộ cơ sở dữ liệu khóa cứng và hồ sơ công trình."
+      path="/dang-nhap"
+      noindex
+    />
     <div id="login-module" className="min-h-screen w-full bg-[#F7F9FC] flex overflow-hidden font-sans relative">
       
       {/* Absolute Back Link for preview escape */}
@@ -346,5 +353,6 @@ export default function LoginPage({ onBackToHome, onRegisterClick }: LoginPagePr
       </div>
 
     </div>
+    </>
   );
 }

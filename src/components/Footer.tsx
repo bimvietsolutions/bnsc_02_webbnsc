@@ -64,11 +64,11 @@ export default function Footer() {
               Sản phẩm
             </h3>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="#du-toan" className="hover:text-[#F5A623] transition-colors">Dự toán BNSC (v1.20)</a></li>
-              <li><a href="#du-toan" className="hover:text-[#F5A623] transition-colors">Dự thầu & Đấu thầu</a></li>
-              <li><a href="#du-toan" className="hover:text-[#F5A623] transition-colors">Thanh quyết toán BNSC</a></li>
-              <li><a href="#du-toan" className="hover:text-[#F5A623] transition-colors">Khóa cứng điện tử</a></li>
-              <li><a href="#du-toan" className="hover:text-[#F5A623] transition-colors">Cơ sở dữ liệu Đơn giá</a></li>
+              <li><a href="/#du-toan" className="hover:text-[#F5A623] transition-colors">Dự toán BNSC (v1.20)</a></li>
+              <li><a href="/#du-toan" className="hover:text-[#F5A623] transition-colors">Dự thầu & Đấu thầu</a></li>
+              <li><a href="/#du-toan" className="hover:text-[#F5A623] transition-colors">Thanh quyết toán BNSC</a></li>
+              <li><a href="/#du-toan" className="hover:text-[#F5A623] transition-colors">Khóa cứng điện tử</a></li>
+              <li><a href="/#du-toan" className="hover:text-[#F5A623] transition-colors">Cơ sở dữ liệu Đơn giá</a></li>
             </ul>
           </div>
 
@@ -78,11 +78,11 @@ export default function Footer() {
               Dịch vụ Tư vấn
             </h3>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="#tu-van" className="hover:text-[#F5A623] transition-colors">Tư vấn xây dựng Chỉ số giá Sở XD</a></li>
-              <li><a href="#tu-van" className="hover:text-[#F5A623] transition-colors">Khảo sát & Lập Đơn giá nhân công</a></li>
-              <li><a href="#tu-van" className="hover:text-[#F5A623] transition-colors">Tính toán Bảng giá ca máy lắp đặt</a></li>
-              <li><a href="#tu-van" className="hover:text-[#F5A623] transition-colors">Thẩm định dự toán phần mềm độc lập</a></li>
-              <li><a href="#tu-van" className="hover:text-[#F5A623] transition-colors">Tư vấn đấu thầu qua mạng quốc gia</a></li>
+              <li><a href="/#tu-van" className="hover:text-[#F5A623] transition-colors">Tư vấn xây dựng Chỉ số giá Sở XD</a></li>
+              <li><a href="/#tu-van" className="hover:text-[#F5A623] transition-colors">Khảo sát & Lập Đơn giá nhân công</a></li>
+              <li><a href="/#tu-van" className="hover:text-[#F5A623] transition-colors">Tính toán Bảng giá ca máy lắp đặt</a></li>
+              <li><a href="/#tu-van" className="hover:text-[#F5A623] transition-colors">Thẩm định dự toán phần mềm độc lập</a></li>
+              <li><a href="/#tu-van" className="hover:text-[#F5A623] transition-colors">Tư vấn đấu thầu qua mạng quốc gia</a></li>
             </ul>
           </div>
 
@@ -92,11 +92,11 @@ export default function Footer() {
               Liên kết Hỗ trợ
             </h3>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="#dao-tao" className="hover:text-[#F5A623] transition-colors">Khóa học Đo bóc khối lượng</a></li>
-              <li><a href="#dao-tao" className="hover:text-[#F5A623] transition-colors">Khóa bồi dưỡng Kế toán Xây dựng</a></li>
-              <li><a href="#tin-tuc" className="hover:text-[#F5A623] transition-colors">Tra cứu Nghị định - Luật Xây dựng</a></li>
-              <li><a href="#tin-tuc" className="hover:text-[#F5A623] transition-colors">Tài liệu hướng dẫn sử dụng PDF</a></li>
-              <li><a href="#trang-chu" className="hover:text-[#F5A623] transition-colors">Kênh hỗ trợ kỹ thuật UltraViewer</a></li>
+              <li><a href="/#dao-tao" className="hover:text-[#F5A623] transition-colors">Khóa học Đo bóc khối lượng</a></li>
+              <li><a href="/#dao-tao" className="hover:text-[#F5A623] transition-colors">Khóa bồi dưỡng Kế toán Xây dựng</a></li>
+              <li><a href="/#tin-tuc" className="hover:text-[#F5A623] transition-colors">Tra cứu Nghị định - Luật Xây dựng</a></li>
+              <li><a href="/#tin-tuc" className="hover:text-[#F5A623] transition-colors">Tài liệu hướng dẫn sử dụng PDF</a></li>
+              <li><a href="/#trang-chu" className="hover:text-[#F5A623] transition-colors">Kênh hỗ trợ kỹ thuật UltraViewer</a></li>
             </ul>
           </div>
 

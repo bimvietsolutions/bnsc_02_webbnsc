@@ -1,161 +1,19 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Eye, ArrowRight, BookOpen, ChevronRight, Search, X, User } from 'lucide-react';
+import { newsArticles, type NewsArticle } from '../data/news';
 
-interface NewsItem {
-  id: number;
-  title: string;
-  date: string;
-  views: number;
-  category: 'Văn bản QPPL' | 'Nội bộ' | 'Chuyên ngành' | 'Khuyến mãi';
-  excerpt: string;
-  imageUrl?: string;
-  contentBody?: string;
-}
+type NewsItem = NewsArticle;
 
-// 13 high-fidelity real news items extracted directly from current local directives and user screenshots
-const LOCAL_NEWS_DATA: NewsItem[] = [
-  {
-    id: 1,
-    title: 'Vĩnh Long: Quyết định 325 và 327/QĐ-SXD Công bộ đơn giá nhân công & máy thi công năm 2026',
-    date: '18 Thg 5, 2026',
-    views: 367,
-    category: 'Văn bản QPPL',
-    excerpt: 'Ngày 18/5/2026, Sở Xây dựng tỉnh Vĩnh Long đã ký ban hành các Quyết định 325/QĐ-SXD và 327/QĐ-SXD về việc công bố đơn giá nhân công xây dựng và giá ca máy thi công làm cơ sở quản lý chi phí đầu tư xây dựng trên địa bàn tỉnh.',
-    contentBody: `Căn cứ Nghị định số 10/2021/NĐ-CP ngày 09/02/2021 của Chính phủ về quản lý chi phí đầu tư xây dựng;
-Căn cứ Thông tư số 11/2021/TT-BXD ngày 31/8/2021 của Bộ trưởng Bộ Xây dựng hướng dẫn một số nội dung xác định và quản lý chi phí đầu tư xây dựng;
-
-Sở Xây dựng tỉnh Vĩnh Long chính thức ban hành:
-1. Quyết định số 325/QĐ-SXD công bố Đơn giá nhân công xây dựng năm 2026 trên địa bàn tỉnh Vĩnh Long.
-2. Quyết định số 327/QĐ-SXD công bố Bảng giá ca máy và thiết bị thi công xây dựng năm 2026 trên địa bàn tỉnh Vĩnh Long.
-
-Các quyết định này có hiệu lực kể từ ngày ký. Phần mềm dự toán BNSC đã cập nhật đầy đủ cơ sở dữ liệu của các quyết định nêu trên, hỗ trợ quý khách hàng tra cứu và áp dụng tự động cho các công trình nhanh nhất.`
-  },
-  {
-    id: 2,
-    title: 'An Giang: Quyết định 2116/QĐ-UBND Công bổ đơn giá NC & MTC năm 2026',
-    date: '6 Thg 5, 2026',
-    views: 226,
-    category: 'Văn bản QPPL',
-    excerpt: 'Ủy ban nhân dân tỉnh An Giang công bố bộ đơn giá nhân công mới nhất và bảng giá ca máy thi công làm cơ sở quản lý chi phí đầu tư xây dựng công trình trên địa bàn tỉnh An Giang chính xác hơn.',
-    contentBody: `Ủy ban nhân dân tỉnh An Giang công bố Quyết định số 2116/QĐ-UBND ban hành bảng công bố giá nhân công và máy thi công đầu năm 2026 bám sát biến động thị trường lao động xây dựng thực tế và các quy định của Chính phủ.
-
-Dữ liệu mới đã được chuẩn hóa vào máy chủ gốc của phần mềm BNSC. Người sử dụng chỉ cần mở tính năng "Tải đơn giá" là có thể cập nhật ngay lập tức toàn bộ định mức và hệ số nhân công tương ứng cho khu vực I, II, III.`
-  },
-  {
-    id: 3,
-    title: 'Cần Thơ: Quyết định 595/QĐ-SXD Công bố đơn giá NC & MTC năm 2026',
-    date: '5 Thg 5, 2026',
-    views: 644,
-    category: 'Văn bản QPPL',
-    excerpt: 'Sở Xây dựng TP. Cần Thơ chính thức ban hành bảng công bố giá nhân công và máy thi công đầu năm 2026 bám sát biến động thị trường lao động xây dựng thực tế và các quy định của Chính phủ.',
-    contentBody: `Sở Xây dựng TP. Cần Thơ ban hành Quyết định số 595/QĐ-SXD công bố giá nhân công xây dựng quý mới quốc gia năm 2026. Bảng đơn giá làm cơ sở để các cá nhân, doanh nghiệp lập báo cáo nghiên cứu khả thi, khảo sát xây dựng dự thầu cho tất cả hạng mục trung tâm thành phố và ngoại thành quận huyện.`
-  },
-  {
-    id: 4,
-    title: 'Lễ ký thỏa thuận hợp tác với Phân hiệu trường Đại học GTVT tại TP.HCM',
-    date: '10 Thg 5, 2022',
-    views: 3900,
-    category: 'Nội bộ',
-    excerpt: 'Bắc Nam Software ký kết biên bản ghi nhớ toàn diện cùng Trường Đại học Giao thông vận tải Phân hiệu tại TP.HCM nhằm tài trợ gói phần mềm bản quyền Dự toán BNSC.',
-    contentBody: `Tại buổi lễ ký kết trang trọng, đại diện lãnh đạo Bắc Nam Software và Ban Giám hiệu Phân hiệu Trường Đại học Giao thông vận tải tại TP.HCM đã thống nhất các điều khoản hợp tác dài hạn.
-
-Theo đó, Bắc Nam Software tài trợ bản quyền miễn phí phần mềm Dự toán BNSC phục vụ công tác giảng dạy môn Kinh tế xây dựng và Đo bóc khối lượng, hỗ trợ giáo trình đào tạo, tổ chức kiểm tra và cấp chứng chỉ định mức uy tín cho sinh viên năm cuối.`
-  },
-  {
-    id: 5,
-    title: 'Cần Thơ: Quyết định 27/2026/QĐ-UBND ban hành Định mức vận chuyển đặc thù đường thủy',
-    date: '19 Thg 3, 2026',
-    views: 390,
-    category: 'Văn bản QPPL',
-    excerpt: 'Ủy ban nhân dân thành phố Cần Thơ quy định về định mức dự toán vận chuyển hàng hóa đặc thù bằng phương tiện đường thùy phục vụ công tác xây lắp, vận hành đường sông.',
-    contentBody: `UBND TP. Cần Thơ vừa ban hành Quyết định 27/2026/QĐ-UBND về định mức vận chuyển vật liệu đặc thù qua cano, sà lan và tàu cứu hộ đường sông nội tỉnh. Đây là cơ sở cốt lõi để các doanh nghiệp thi công cầu đường thủy, nạo vét kênh rạch nội vùng ĐBSCL lập dự toán chi phí chính xác.`
-  },
-  {
-    id: 6,
-    title: 'Đắk Lắk: QĐ 21/2026/QĐ-UBND ban hành Bộ đơn giá dịch vụ công ích đô thị năm 2026',
-    date: '13 Thg 3, 2026',
-    views: 580,
-    category: 'Chuyên ngành',
-    excerpt: 'UBND tỉnh Đắk Lắk ban hành Bộ đơn giá làm cơ sở xác định chi phí các dịch vụ rác thải, xử lý cây xanh và chiếu sáng khu đô thị lớn.',
-    contentBody: `Quyết định số 21/2026/QĐ-UBND quy định đơn giá dịch vụ công ích đô thị trên địa bàn tỉnh Đắk Lắk bao gồm: 
-- Thu gom, vận chuyển và xử lý chất thải rắn sinh hoạt.
-- Duy trì hệ thống cây xanh, tỉa cành định kỳ phòng bão.
-- Duy trì hệ thống chiếu sáng công cộng đô thị thông minh.
-
-Dữ liệu đặc thù này đã được tổng hợp chi tiết và cập nhật đầy đủ vào ứng dụng Dự toán BNSC phục vụ đắc lực cho các Công ty Môi trường Đô thị địa phương.`
-  },
-  {
-    id: 7,
-    title: 'BỘ XÂY DỰNG: Thông tư 04/2026/TT-BXD Định mức bảo dưỡng kết cấu hạ tầng đường sắt quốc gia',
-    date: '30 Thg 1, 2026',
-    views: 727,
-    category: 'Văn bản QPPL',
-    excerpt: 'Thông tư số 04/2026/TT-BXD của Bộ Xây dựng quy định về định mức dự toán bảo dưỡng kỹ thuật, sửa chữa định kỳ kết cấu hạ tầng đường sắt quốc gia.',
-    contentBody: `Bộ Xây dựng ban hành Thông tư số 04/2026/TT-BXD quy định định mức dự toán bảo dưỡng trực tiếp hệ thống tà vẹt, đường ray, cầu hầm sắt quốc gia. Thông tư là cơ sở để các Ban Quản lý Dự án Đường sắt lập kế hoạch vốn bảo trì hằng năm.`
-  },
-  {
-    id: 8,
-    title: 'Đà Nẵng: Quyết định 152-153/QĐ-SXD Công bố đơn giá NC & MTC năm 2026',
-    date: '12 Thg 2, 2026',
-    views: 3295,
-    category: 'Văn bản QPPL',
-    excerpt: 'Sở Xây dựng TP. Đà Nẵng công bố các đơn giá nhân công tương ứng trên địa bàn Hải Châu, Liên Chiểu, Ngũ Hành Sơn giúp đồng bộ kiểm tra xây lắp số.',
-    contentBody: `Các Quyết định số 152 và 153/QĐ-SXD điều chỉnh chính thức hệ số lương nhân công các nhóm 1 đến nhóm 4 và chi phí thuê máy rải nhựa, máy xúc cơ giới trên địa bàn Đà Nẵng. Bắc Nam Software đã cập nhật tệp đơn giá lên đám mây, khách hàng có thể cài đặt dễ dàng.`
-  },
-  {
-    id: 9,
-    title: 'TCT Tân Cảng Sài Gòn (Bộ Quốc phòng): Ứng dụng 31 bộ phần mềm Dự toán BNSC',
-    date: '15 Thg 12, 2017',
-    views: 3452,
-    category: 'Nội bộ',
-    excerpt: 'Ứng dụng thử nghiệm thành công 31 bộ giấy phép Dự toán BNSC cho hoạt động xây dựng công trình cảng biển Hải đoàn tiền phương quốc phòng.',
-    contentBody: `Đáp ứng yêu cầu nghiêm ngặt về tiến độ và độ bảo mật kỹ thuật quốc phòng, Tổng công ty Tân Cảng Sài Gòn đã ký kết sở hữu bản quyền hàng loạt phần mềm BNSC, hướng tới số hóa hoàn toàn sơ đồ tổng mức đầu tư xây dựng quân cảng.`
-  },
-  {
-    id: 10,
-    title: 'CHÚC MỪNG NĂM MỚI BÍNH NGỌ 2026 – Thông báo lịch nghỉ Tết và ưu đãi đặc biệt',
-    date: '1 Thg 1, 2025',
-    views: 1523,
-    category: 'Khuyến mãi',
-    excerpt: 'Lời tri ân và kính chúc Tết gửi tới hàng nghìn kỹ sư, cơ quan quản lý chuyên môn cùng chương trình giảm giá lên đến 15% khóa cứng BNSC.',
-    contentBody: `Bắc Nam Software kính chúc Quý Khách hàng, Quý Đối tác một năm mới Bính Ngọ 2026 an khang thịnh vượng!
-Lịch nghỉ tết kéo dài từ ngày 26 âm lịch đến mùng 6 âm lịch. Nhằm tri ân khách hàng, Bắc Nam áp dụng chương trình ưu đãi đặc biệt 15% trực tiếp khi nâng cấp khóa cứng hoặc cập nhật tệp định mức chuyên dụng.`
-  },
-  {
-    id: 11,
-    title: 'Ban QLĐTXD Y tế TP.HCM: Ứng dụng phần mềm Dự toán BNSC để thẩm tra dự toán',
-    date: '15 Thg 10, 2017',
-    views: 3545,
-    category: 'Nội bộ',
-    excerpt: 'Triển khai công tác chuẩn hóa dự toán bệnh viện công nghệ cao trên phạm vi thành phố dựa trên giải pháp chuyên sâu của BNSC.',
-    contentBody: `Giải pháp phần mềm từ BNSC giúp tối ưu hóa 45% thời gian đo bóc khối lượng, đối soát mã hóa danh mục thiết bị y tế chuyên dụng nhập khẩu cho Ban Quản lý đầu tư xây dựng các công trình Y tế TP.HCM.`
-  },
-  {
-    id: 12,
-    title: 'Cần Thơ: QĐ 50/2025/QĐ-UBND ban hành Định mức dự toán các công tác xây dựng đặc thù',
-    date: '15 Thg 12, 2025',
-    views: 171,
-    category: 'Chuyên ngành',
-    excerpt: 'Bộ định mức chuyên môn bổ sung cho các công tác phục hồi, bảo tồn di sản sông nước ĐBSCL và trùng tu di tích văn hóa.',
-    contentBody: `Công bố chi tiết nhóm công việc đặc trưng tôn tạo di sản kiến trúc trên sông vùng Nam Bộ. Phần mềm BNSC đã số hóa và gắn mã nội bộ giúp việc áp dụng định mức không gặp bất kỳ vướng mắc nào.`
-  },
-  {
-    id: 13,
-    title: 'Lễ ký kết hợp tác với Trường Cao đẳng Xây dựng số 2 (Bộ Xây dựng)',
-    date: '23 Thg 4, 2022',
-    views: 3791,
-    category: 'Nội bộ',
-    excerpt: 'Hỗ trợ sinh viên thực tập tiếp cận sớm với các công nghệ thẩm định dự toán hàng đầu phục vụ thiết thực đồ án tốt nghiệp.',
-    contentBody: `Lễ ký kết diễn ra thành công tốt đẹp mở ra nhiều cơ hội thực tập, việc làm trực tiếp tại phòng dự án liên kết của Bắc Nam Software dành cho những sinh viên xuất sắc của trường.`
-  }
-];
 
 export default function NewsSection() {
+  const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState<string>('Tất cả');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('newest');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [activeReadItem, setActiveReadItem] = useState<NewsItem | null>(null);
+
+  const openArticle = (item: NewsItem) => navigate(`/tin-tuc/${item.slug}`);
 
   const tabs = ['Tất cả', 'Nội bộ', 'Chuyên ngành', 'Văn bản QPPL', 'Khuyến mãi'];
 
@@ -205,7 +63,7 @@ export default function NewsSection() {
 
   // Process data (Filter & Sort)
   const processedNews = useMemo(() => {
-    let result = [...LOCAL_NEWS_DATA];
+    let result = [...newsArticles];
 
     // Filter by Tab
     if (selectedTab !== 'Tất cả') {
@@ -400,7 +258,7 @@ export default function NewsSection() {
                 {/* Left Large Column - Primary Article */}
                 <div 
                   className="lg:col-span-7 flex flex-col group cursor-pointer"
-                  onClick={() => setActiveReadItem(featuredItem)}
+                  onClick={() => openArticle(featuredItem)}
                 >
                   <article className="bg-white rounded-xl overflow-hidden border border-[#E1E5ED] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex-1 flex flex-col justify-between">
                     
@@ -462,7 +320,7 @@ export default function NewsSection() {
                     return (
                       <article
                         key={item.id}
-                        onClick={() => setActiveReadItem(item)}
+                        onClick={() => openArticle(item)}
                         className="bg-white rounded-xl border border-[#E1E5ED] p-3 flex items-center gap-3 hover:shadow-md hover:border-l-4 hover:border-l-[#185FA5] hover:translate-x-0.5 cursor-pointer transition-all duration-200 group text-left"
                       >
                         {/* Left rounded square image block with letters "BN" watermark */}
@@ -519,7 +377,7 @@ export default function NewsSection() {
                   return (
                     <article
                       key={item.id}
-                      onClick={() => setActiveReadItem(item)}
+                      onClick={() => openArticle(item)}
                       className="bg-white rounded-xl overflow-hidden border border-[#E1E5ED] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between cursor-pointer group text-left"
                     >
                       {/* Image header with BNSC watermark */}
@@ -610,84 +468,6 @@ export default function NewsSection() {
 
       </div>
 
-      {/* 4. Elegant Overlay Document Reader Modal */}
-      {activeReadItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 md:p-10">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl relative overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
-            
-            {/* Header top banner */}
-            <div className="bg-[#0B2545] px-6 py-5 text-white flex items-center justify-between text-left">
-              <div>
-                <span className="text-[10px] uppercase font-mono tracking-widest text-[#F5A623] font-extrabold">
-                  {activeReadItem.category}
-                </span>
-                <h3 className="text-sm sm:text-base font-extrabold text-white truncate mt-0.5 pr-8">
-                  {activeReadItem.title}
-                </h3>
-              </div>
-              <button 
-                onClick={() => setActiveReadItem(null)}
-                className="text-slate-300 hover:text-white p-1.5 rounded-lg bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
-                aria-label="Đóng đọc tài liệu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Reading window container */}
-            <div className="p-6 sm:p-8 overflow-y-auto text-left space-y-6 flex-grow scrollbar-thin">
-              
-              {/* Document metadata panel */}
-              <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-500 font-semibold pb-4 border-b border-slate-100">
-                <span className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded">
-                  <Calendar className="w-3.5 h-3.5 text-[#1B5FA8]" /> {activeReadItem.date}
-                </span>
-                <span className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded">
-                  <Eye className="w-3.5 h-3.5 text-[#1B5FA8]" /> {activeReadItem.views.toLocaleString()} lượt đọc
-                </span>
-                <span className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded">
-                  <User className="w-3.5 h-3.5 text-[#1B5FA8]" /> Ban Biên Tập BNSC
-                </span>
-              </div>
-
-              {/* Actual Title */}
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#0B2545] leading-snug tracking-tight">
-                {activeReadItem.title}
-              </h2>
-
-              {/* Excerpt Summary block */}
-              <div className="bg-[#F7F9FC] border-l-4 border-[#F5A623] p-4 rounded-r-xl italic text-sm text-slate-600 leading-relaxed font-medium">
-                "{activeReadItem.excerpt}"
-              </div>
-
-              {/* Structured body context */}
-              <div className="text-slate-700 text-sm sm:text-base leading-relaxed whitespace-pre-line space-y-4 font-normal">
-                {activeReadItem.contentBody || `Hệ thống dữ liệu đang cập nhật chi tiết nội dung văn bản này. Mọi thắc mắc hoặc yêu cầu trích xuất hồ sơ gốc, quý khách hàng vui lòng liên hệ Ban biên tập hoặc Bộ phận hỗ trợ kỹ thuật Bắc Nam Software qua tổng đài hỗ trợ để được cung cấp văn bản hoàn thiện nhanh nhất.`}
-              </div>
-
-            </div>
-
-            {/* Footer action bar */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
-              <button 
-                onClick={() => setActiveReadItem(null)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-[#0B2545] font-bold text-xs sm:text-sm rounded-lg transition-colors cursor-pointer"
-              >
-                Đóng lại
-              </button>
-              <button 
-                onClick={() => {
-                  alert('Đang tải văn bản đính kèm từ cơ sở dữ liệu Sở Xây Dựng...');
-                }}
-                className="px-4 py-2 bg-[#1B5FA8] hover:bg-[#0B2545] text-white font-bold text-xs sm:text-sm rounded-lg flex items-center gap-1.5 shadow transition-all cursor-pointer"
-              >
-                Tải văn bản đính kèm &rarr;
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
 
     </section>
   );

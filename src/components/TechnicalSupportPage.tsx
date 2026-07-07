@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, 
-  MessageSquare, 
-  Phone, 
-  Download, 
-  Users, 
-  ShieldCheck, 
-  Smartphone, 
-  ExternalLink, 
-  Cpu, 
-  Grid, 
-  CheckCircle2, 
-  Clock, 
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  MessageSquare,
+  Phone,
+  Download,
+  Users,
+  ShieldCheck,
+  Smartphone,
+  ExternalLink,
+  Cpu,
+  Grid,
+  CheckCircle2,
+  Clock,
   HelpCircle,
   FileDown,
   X
 } from 'lucide-react';
+import Seo from '../seo/Seo';
 
-interface TechnicalSupportPageProps {
-  onBackToHome: () => void;
-}
-
-export default function TechnicalSupportPage({ onBackToHome }: TechnicalSupportPageProps) {
+export default function TechnicalSupportPage() {
+  const navigate = useNavigate();
+  const onBackToHome = () => navigate('/');
   const [activeTab, setActiveTab] = useState<'all' | 'software' | 'documents'>('all');
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const [showVchatBanner, setShowVchatBanner] = useState(true);
@@ -84,6 +84,12 @@ export default function TechnicalSupportPage({ onBackToHome }: TechnicalSupportP
   };
 
   return (
+    <>
+    <Seo
+      title="Hỗ trợ kỹ thuật"
+      description="Trung tâm hỗ trợ kỹ thuật phần mềm Dự toán BNSC: hotline, hỗ trợ từ xa UltraViewer, tài liệu và đội ngũ kỹ sư sẵn sàng phục vụ."
+      path="/ho-tro-ky-thuat"
+    />
     <div className="min-h-screen bg-[#071426] text-white font-sans relative overflow-hidden">
       
       {/* Decorative Blur Orbs */}
@@ -376,5 +382,6 @@ export default function TechnicalSupportPage({ onBackToHome }: TechnicalSupportP
       </footer>
 
     </div>
+    </>
   );
 }

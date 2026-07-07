@@ -1,0 +1,342 @@
+// =============================================================================
+// BNSC – Bắc Nam Software | Prisma schema (PostgreSQL)
+// Cấu trúc CSDL tập trung toàn bộ nội dung website + dữ liệu vận hành (lead,
+// admin). Đây là "nguồn sự thật" (source of truth); chạy `prisma migrate` để
+// sinh SQL migration trong db/migrations.
+//
+// Quy ước:
+//  - sortOrder: thứ tự hiển thị (nhỏ hơn = trước).
+//  - isActive / isPublished: bật/tắt hiển thị mà không cần xóa (soft toggle).
+//  - dateText: giữ nguyên chuỗi ngày đang hiển thị (vd "18 Thg 5, 2026").
+//    publishedAt: mốc thời gian thật để sắp xếp/lọc (điền dần sau).
+//  - metaTitle/metaDescription/ogImage: ghi đè SEO cho từng bài (tùy chọn).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------- Cấu hình site -------------------------------
+// Key-value linh hoạt: tên công ty, hotline, email, địa chỉ, phiên bản phần
+// mềm, nội dung thanh thông báo, liên kết mạng xã hội, prompt hệ thống AI...
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  group     String? // 'general' | 'contact' | 'social' | 'announcement' | 'ai'
+  label     String?
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ------------------------------- Điều hướng ----------------------------------
+// Vừa dùng cho menu chính, vừa cho submenu (parentId trỏ về mục cha "Phần mềm").
+model NavLink {
+  id        Int       @id @default(autoincrement())
+  name      String
+  href      String // "#tin-tuc", "/thu-vien"...
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  parentId  Int?
+  parent    NavLink?  @relation("NavChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  NavLink[] @relation("NavChildren")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([parentId])
+  @@map("nav_links")
+}
+
+// ------------------------------- Hero (trang chủ) ----------------------------
+model HeroSlide {
+  id        Int      @id @default(autoincrement())
+  imageUrl  String
+  caption   String
+  linkUrl   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hero_slides")
+}
+
+model HeroStat {
+  id        Int     @id @default(autoincrement())
+  value     String // "63", "v1.20"
+  label     String
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  @@map("hero_stats")
+}
+
+// ------------------------------- Sản phẩm & dịch vụ --------------------------
+model Product {
+  id         Int      @id @default(autoincrement())
+  slug       String   @unique
+  name       String
+  isFeatured Boolean  @default(false)
+  badge      String?
+  tagline    String   @db.Text
+  features   String[] // danh sách tính năng
+  ctaText    String
+  iconName   String // tên icon lucide
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("products")
+}
+
+// ------------------------------- Tin tức -------------------------------------
+model NewsCategory {
+  id        Int           @id @default(autoincrement())
+  slug      String        @unique
+  name      String        @unique
+  sortOrder Int           @default(0)
+  articles  NewsArticle[]
+
+  @@map("news_categories")
+}
+
+model NewsArticle {
+  id              Int          @id @default(autoincrement())
+  slug            String       @unique
+  title           String
+  excerpt         String       @db.Text
+  contentBody     String       @db.Text
+  imageUrl        String?
+  author          String?      @default("Ban Biên Tập BNSC")
+  categoryId      Int
+  category        NewsCategory @relation(fields: [categoryId], references: [id])
+  dateText        String? // chuỗi ngày hiển thị hiện tại
+  publishedAt     DateTime?    @default(now())
+  views           Int          @default(0)
+  isPublished     Boolean      @default(true)
+  metaTitle       String?
+  metaDescription String?      @db.Text
+  ogImage         String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([categoryId])
+  @@index([isPublished, publishedAt])
+  @@map("news_articles")
+}
+
+// ------------------------------- Thư viện hướng dẫn --------------------------
+model LibraryCategory {
+  id        Int              @id @default(autoincrement())
+  slug      String           @unique
+  name      String           @unique
+  sortOrder Int              @default(0)
+  articles  LibraryArticle[]
+
+  @@map("library_categories")
+}
+
+model LibraryArticle {
+  id              Int             @id @default(autoincrement())
+  slug            String          @unique
+  title           String
+  summary         String          @db.Text
+  content         String?         @db.Text // nội dung chi tiết (điền dần)
+  imageUrl        String?
+  videoUrl        String?
+  author          String?
+  categoryId      Int
+  category        LibraryCategory @relation(fields: [categoryId], references: [id])
+  dateText        String?
+  publishedAt     DateTime?       @default(now())
+  views           Int             @default(0)
+  attachmentUrl   String?
+  attachmentName  String?
+  attachmentSize  String?
+  isPublished     Boolean         @default(true)
+  metaTitle       String?
+  metaDescription String?         @db.Text
+  ogImage         String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([categoryId])
+  @@index([isPublished, publishedAt])
+  @@map("library_articles")
+}
+
+// ------------------------------- Khách hàng ----------------------------------
+model Customer {
+  id        Int     @id @default(autoincrement())
+  name      String
+  subtext   String?
+  logoUrl   String?
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  @@map("customers")
+}
+
+// ------------------------------- Tư vấn & Đào tạo ----------------------------
+model ConsultingService {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String  @db.Text
+  iconName    String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  @@map("consulting_services")
+}
+
+model Course {
+  id           Int      @id @default(autoincrement())
+  slug         String   @unique
+  title        String
+  scheduleText String? // "Khai giảng ngày 15 hằng tháng"
+  duration     String?
+  format       String? // hình thức học ("Trực tiếp & Zoom")
+  price        String?
+  coupon       String?
+  slots        String?
+  trainer      String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("courses")
+}
+
+// ------------------------------- FAQ -----------------------------------------
+model Faq {
+  id        Int      @id @default(autoincrement())
+  scope     FaqScope @default(HOME)
+  question  String   @db.Text
+  answer    String   @db.Text
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+
+  @@index([scope])
+  @@map("faqs")
+}
+
+enum FaqScope {
+  HOME
+  SUPPORT
+}
+
+// ------------------------------- Hỗ trợ kỹ thuật -----------------------------
+model SupportStaff {
+  id        Int     @id @default(autoincrement())
+  name      String
+  phone     String
+  role      String?
+  ext       String?
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  @@map("support_staff")
+}
+
+model RemoteTool {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String  @db.Text
+  version     String?
+  url         String
+  realUrl     String?
+  badge       String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  @@map("remote_tools")
+}
+
+// ------------------------------- Lead (form đăng ký) -------------------------
+// Lưu dữ liệu người dùng gửi từ modal Tải/Đăng ký/Tư vấn để admin theo dõi.
+model Lead {
+  id          Int        @id @default(autoincrement())
+  type        LeadType   @default(REGISTER)
+  fullName    String
+  phone       String
+  email       String?
+  province    String?
+  company     String?
+  productSlug String?
+  courseSlug  String?
+  note        String?    @db.Text
+  source      String? // trang/nút phát sinh lead
+  status      LeadStatus @default(NEW)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([type, status])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+enum LeadType {
+  DOWNLOAD
+  REGISTER
+  CONSULT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  DONE
+  SPAM
+}
+
+// ------------------------------- Chat AI (tùy chọn) --------------------------
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  sessionId String?
+  role      String // 'user' | 'model'
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@map("chat_messages")
+}
+
+// ------------------------------- Quản trị viên -------------------------------
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  role         AdminRole @default(EDITOR)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
+enum AdminRole {
+  ADMIN
+  EDITOR
+}
+
+// ------------------------------- Media (tùy chọn) ----------------------------
+// Sổ đăng ký tài nguyên upload (ảnh bài viết, logo, file PDF...).
+model Media {
+  id        Int      @id @default(autoincrement())
+  url       String
+  alt       String?
+  mimeType  String?
+  sizeBytes Int?
+  createdAt DateTime @default(now())
+
+  @@map("media")
+}

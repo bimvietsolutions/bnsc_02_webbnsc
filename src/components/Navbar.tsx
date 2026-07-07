@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, User, ArrowRight, ShieldCheck, ChevronDown } from 'lucide-react';
 import { navLinks } from '../data';
+import { scrollToId } from '../utils/scroll';
 
 interface NavbarProps {
   onDownloadClick: () => void;
@@ -17,6 +19,8 @@ const softwareDropdownItems = [
 ];
 
 export default function Navbar({ onDownloadClick, onLoginClick, onRegisterClick }: NavbarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState('trang-chu');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -52,17 +56,13 @@ export default function Navbar({ onDownloadClick, onLoginClick, onRegisterClick 
   const handleLinkClick = (href: string) => {
     setIsMobileMenuOpen(false);
     const targetId = href.replace('#', '');
-    const element = document.getElementById(targetId);
-    if (element) {
-      const offset = 80; // height of navbar
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.scrollY - offset;
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+    // Các section thuộc trang chủ: nếu đang ở trang khác thì điều hướng về "/#id",
+    // ScrollManager sẽ tự cuộn tới section sau khi trang chủ render.
+    if (location.pathname !== '/') {
+      navigate(`/#${targetId}`);
+      return;
     }
+    scrollToId(targetId);
   };
 
   return (

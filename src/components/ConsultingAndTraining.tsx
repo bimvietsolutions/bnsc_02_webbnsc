@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { ShieldCheck, GraduationCap, Calendar, Users, MapPin, ArrowRight, Gavel, HelpCircle, FileText, CheckCircle } from 'lucide-react';
+import { useUiActions } from '../context/UiActions';
 
-interface ConsultingAndTrainingProps {
-  onRegisterClick: (courseName: string) => void;
-}
-
-export default function ConsultingAndTraining({ onRegisterClick }: ConsultingAndTrainingProps) {
+export default function ConsultingAndTraining() {
+  const { openConsult } = useUiActions();
+  const onRegisterClick = (courseName: string) => openConsult(courseName);
   // Frequently asked questions (FAQs) or consultative elements
   const [activeQuestion, setActiveQuestion] = useState<number | null>(0);
 

@@ -1,12 +1,19 @@
 import React from 'react';
 import { Laptop, Scale, GraduationCap, Check, HelpCircle, FileSpreadsheet, ArrowUpRight } from 'lucide-react';
 import { products } from '../data';
+import { useUiActions } from '../context/UiActions';
 
-interface ProductsProps {
-  onProductCtaClick: (productId: string) => void;
-}
+export default function Products() {
+  const { openDownload, openConsult } = useUiActions();
 
-export default function Products({ onProductCtaClick }: ProductsProps) {
+  const onProductCtaClick = (productId: string) => {
+    if (productId === 'du-toan-bnsc') {
+      openDownload(productId);
+    } else {
+      openConsult(productId);
+    }
+  };
+
   // Simple mapping of string iconName to Lucide components
   const getIcon = (name: string, isFeatured: boolean) => {
     const size = "w-6 h-6";
