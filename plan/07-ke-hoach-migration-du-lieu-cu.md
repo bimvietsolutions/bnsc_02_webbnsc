@@ -522,6 +522,11 @@ IMAGE=registry.bacnam.com.vn/bimvietsolutions/bnsc_02_webbnsc:latest
 ENVF=/home/deploy_demobnsc/app/.env
 UPL=/home/deploy_demobnsc/app/uploads
 EXPORT=/home/deploy_demobnsc/app/legacy-export   # thư mục JSON export, chép lên bằng scp
+
+# Chạy container bằng đúng uid/gid đang sở hữu thư mục uploads. Không ép về uid
+# 1000 (user `node` trong image): user deploy trên VPS mang uid khác và không có
+# quyền chown, nên ép là hỏng ngay ở bước tạo thư mục.
+RUN_USER="$(stat -c %u:%g $UPL)"
 ```
 
 **BẮT BUỘC làm trước khi merge PR** (khảo sát VPS 2026-08-22 phát hiện):
@@ -577,8 +582,8 @@ EXPORT=/home/deploy_demobnsc/app/legacy-export   # thư mục JSON export, chép
    ```
 
 2. **Deploy** — merge vào `main`, GitHub Actions tự chạy. Pipeline đã lo:
-   tạo `$UPL` + `chown 1000:1000`, áp `prisma migrate deploy`, mount volume,
-   và chặn ở `/health/ready` (có truy vấn bảng `articles`).
+   tạo `$UPL`, áp `prisma migrate deploy`, mount volume và chạy container bằng
+   đúng uid sở hữu thư mục đó, rồi chặn ở `/health/ready` (truy vấn bảng `articles`).
 
 3. **Nạp dữ liệu cấu hình site** (chỉ lần đầu):
    ```bash
@@ -591,7 +596,7 @@ EXPORT=/home/deploy_demobnsc/app/legacy-export   # thư mục JSON export, chép
      -v $UPL:/app/public/uploads \
      -v $EXPORT:/export:ro \
      -e LEGACY_EXPORT_DIR=/export \
-     --user 1000:1000 \
+     --user "$RUN_USER" -e HOME=/tmp \
      $IMAGE npm run legacy:mirror
    ```
    Chạy lại được nhiều lần: tệp đã tải sẽ bỏ qua. Muốn tiết kiệm 423 MB thì xoá 2
@@ -606,6 +611,7 @@ EXPORT=/home/deploy_demobnsc/app/legacy-export   # thư mục JSON export, chép
      -v $UPL:/app/public/uploads \
      -v $EXPORT:/export:ro \
      -e LEGACY_EXPORT_DIR=/export \
+     --user "$RUN_USER" -e HOME=/tmp \
      $IMAGE npm run legacy:import
    ```
    Upsert theo `legacyId` nên chạy lại nhiều lần vẫn ra cùng kết quả.

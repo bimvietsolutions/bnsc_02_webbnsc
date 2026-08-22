@@ -29,9 +29,9 @@ COPY --from=build /app/db ./db
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/src ./src
 
-# Thư mục dữ liệu lúc chạy. Deploy mount thư mục của host đè lên đây, nên host
-# phải thuộc uid/gid 1000 (user `node`) — nếu không, mkdirSync trong
-# server/routes.upload.ts sẽ ném EACCES ngay lúc khởi động.
+# Thư mục dữ liệu lúc chạy. Deploy mount thư mục của host đè lên đây và chạy
+# container bằng đúng uid/gid đang sở hữu thư mục đó (xem deploy.yml), nên không
+# phụ thuộc vào việc host có user mang uid 1000 hay không.
 RUN mkdir -p /app/public/uploads && chown -R node:node /app/public
 
 USER node
