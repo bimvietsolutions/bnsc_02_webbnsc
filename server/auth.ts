@@ -6,12 +6,17 @@ import type { Request, Response, NextFunction, Router } from 'express';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 import { prisma } from './db';
 
 const COOKIE_NAME = 'bnsc_admin';
 const JWT_SECRET = process.env.JWT_SECRET || 'bnsc-dev-secret-CHANGE-ME';
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 ngày
 const isProd = process.env.NODE_ENV === 'production';
+
+// Đăng nhập bằng Google (tùy chọn): chỉ bật khi có GOOGLE_CLIENT_ID.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 if (isProd && JWT_SECRET === 'bnsc-dev-secret-CHANGE-ME') {
   console.warn('⚠ JWT_SECRET chưa được đặt trong môi trường production!');
@@ -29,6 +34,17 @@ export interface AuthedRequest extends Request {
 
 function signToken(payload: AdminPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+
+/** Đặt cookie phiên đăng nhập (dùng chung cho login mật khẩu và Google). */
+function setSessionCookie(res: Response, payload: AdminPayload) {
+  res.cookie(COOKIE_NAME, signToken(payload), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: isProd,
+    maxAge: MAX_AGE_MS,
+    path: '/',
+  });
 }
 
 /** Middleware: yêu cầu đăng nhập admin. */
@@ -60,19 +76,59 @@ export function createAuthRouter(): Router {
       if (!ok) return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
 
       const payload: AdminPayload = { id: user.id, email: user.email, role: user.role };
-      const token = signToken(payload);
-      res.cookie(COOKIE_NAME, token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: isProd,
-        maxAge: MAX_AGE_MS,
-        path: '/',
-      });
+      setSessionCookie(res, payload);
       await prisma.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
       res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
     } catch (e) {
       console.error('login error', e);
       res.status(500).json({ error: 'Lỗi máy chủ khi đăng nhập.' });
+    }
+  });
+
+  // Cấu hình đăng nhập cho frontend: có bật Google hay không, và Client ID.
+  router.get('/config', (_req, res) => {
+    res.json({ googleClientId: GOOGLE_CLIENT_ID || null });
+  });
+
+  // Đăng nhập bằng Google: nhận ID token (credential) từ Google Identity
+  // Services, xác thực chữ ký + audience, rồi so khớp với tài khoản admin đã
+  // tồn tại theo email đã được Google xác minh (không tự tạo tài khoản mới).
+  router.post('/google', async (req, res) => {
+    try {
+      if (!googleClient)
+        return res.status(400).json({ error: 'Đăng nhập bằng Google chưa được cấu hình.' });
+
+      const { credential } = req.body ?? {};
+      if (!credential)
+        return res.status(400).json({ error: 'Thiếu thông tin xác thực từ Google.' });
+
+      let ticket;
+      try {
+        ticket = await googleClient.verifyIdToken({
+          idToken: String(credential),
+          audience: GOOGLE_CLIENT_ID,
+        });
+      } catch {
+        return res.status(401).json({ error: 'Phiên đăng nhập Google không hợp lệ.' });
+      }
+
+      const p = ticket.getPayload();
+      if (!p?.email || !p.email_verified)
+        return res.status(401).json({ error: 'Email Google chưa được xác minh.' });
+
+      const user = await prisma.adminUser.findUnique({ where: { email: p.email } });
+      if (!user || !user.isActive)
+        return res
+          .status(403)
+          .json({ error: 'Tài khoản Google này chưa được cấp quyền quản trị.' });
+
+      const payload: AdminPayload = { id: user.id, email: user.email, role: user.role };
+      setSessionCookie(res, payload);
+      await prisma.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+      res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    } catch (e) {
+      console.error('google login error', e);
+      res.status(500).json({ error: 'Lỗi máy chủ khi đăng nhập bằng Google.' });
     }
   });
 

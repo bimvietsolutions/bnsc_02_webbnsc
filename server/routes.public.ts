@@ -7,6 +7,7 @@
  */
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import { prisma } from './db';
+import { SECTION_PREFIX } from './routes.content';
 
 type Handler = (req: Request, res: Response) => Promise<unknown> | unknown;
 const ah =
@@ -40,13 +41,30 @@ export function createPublicRouter(): Router {
     }),
   );
 
+  // Hero: ưu tiên các bài được đánh dấu isSlider (kế thừa 29 bài của site cũ);
+  // nếu chưa có bài nào thì dùng bảng hero_slides nhập tay.
   router.get(
     '/hero',
     ah(async (_req, res) => {
-      const [slides, stats] = await Promise.all([
+      const [sliderArticles, manualSlides, stats] = await Promise.all([
+        prisma.article.findMany({
+          where: { isPublished: true, isSlider: true, coverUrl: { not: null } },
+          orderBy: [{ sliderOrder: 'asc' }, { publishedAt: 'desc' }],
+          take: 12,
+          select: { title: true, slug: true, section: true, coverUrl: true },
+        }),
         prisma.heroSlide.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
         prisma.heroStat.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       ]);
+
+      const slides = sliderArticles.length
+        ? sliderArticles.map((a) => ({
+            imageUrl: a.coverUrl!,
+            caption: a.title,
+            linkUrl: `${SECTION_PREFIX[a.section]}/${a.slug}`,
+          }))
+        : manualSlides;
+
       res.json({ slides, stats });
     }),
   );
@@ -101,55 +119,64 @@ export function createPublicRouter(): Router {
     }),
   );
 
-  router.get(
-    '/news',
-    ah(async (_req, res) => {
+  // ---------------------------------------------------------------------------
+  // Alias tương thích ngược: /news và /library nay đọc từ bảng `articles` hợp
+  // nhất và trả đúng shape mà mapNews/mapLibrary ở frontend đang dùng.
+  // Khác biệt với bản cũ: CÓ phân trang và danh sách KHÔNG kèm nội dung bài
+  // (555 bài × ~19KB sẽ tạo payload vài MB). Dùng /articles cho tính năng mới.
+  // ---------------------------------------------------------------------------
+  const aliasList = (section: 'NEWS' | 'LIBRARY') =>
+    ah(async (req: Request, res: Response) => {
+      const take = Math.min(Number(req.query.limit) || 60, 200);
+      const rows = await prisma.article.findMany({
+        where: { isPublished: true, section },
+        orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
+        take,
+        select: {
+          id: true, slug: true, title: true, summary: true, coverUrl: true, thumbUrl: true,
+          author: true, dateText: true, publishedAt: true, views: true,
+          category: { select: { name: true, slug: true } },
+        },
+      });
       res.json(
-        await prisma.newsArticle.findMany({
-          where: { isPublished: true },
-          include: { category: true },
-          orderBy: { id: 'desc' },
-        }),
+        rows.map((r) => ({
+          id: r.id,
+          slug: r.slug,
+          title: r.title,
+          excerpt: r.summary ?? '',
+          summary: r.summary ?? '',
+          contentBody: '', // danh sách không kèm nội dung — xem endpoint chi tiết
+          content: null,
+          imageUrl: r.coverUrl ?? r.thumbUrl,
+          author: r.author,
+          category: r.category,
+          dateText: r.dateText,
+          publishedAt: r.publishedAt,
+          views: r.views,
+        })),
       );
-    }),
-  );
+    });
 
-  router.get(
-    '/news/:slug',
-    ah(async (req, res) => {
-      const item = await prisma.newsArticle.findFirst({
-        where: { slug: req.params.slug, isPublished: true },
-        include: { category: true },
+  const aliasDetail = (section: 'NEWS' | 'LIBRARY') =>
+    ah(async (req: Request, res: Response) => {
+      const item = await prisma.article.findFirst({
+        where: { slug: req.params.slug, isPublished: true, section },
+        include: { category: { select: { name: true, slug: true } } },
       });
       if (!item) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
-      res.json(item);
-    }),
-  );
-
-  router.get(
-    '/library',
-    ah(async (_req, res) => {
-      res.json(
-        await prisma.libraryArticle.findMany({
-          where: { isPublished: true },
-          include: { category: true },
-          orderBy: { id: 'asc' },
-        }),
-      );
-    }),
-  );
-
-  router.get(
-    '/library/:slug',
-    ah(async (req, res) => {
-      const item = await prisma.libraryArticle.findFirst({
-        where: { slug: req.params.slug, isPublished: true },
-        include: { category: true },
+      res.json({
+        ...item,
+        excerpt: item.summary ?? '',
+        contentBody: item.contentHtml ?? '',
+        content: item.contentHtml,
+        imageUrl: item.coverUrl ?? item.thumbUrl,
       });
-      if (!item) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
-      res.json(item);
-    }),
-  );
+    });
+
+  router.get('/news', aliasList('NEWS'));
+  router.get('/news/:slug', aliasDetail('NEWS'));
+  router.get('/library', aliasList('LIBRARY'));
+  router.get('/library/:slug', aliasDetail('LIBRARY'));
 
   // Nhận lead từ form (Tải / Đăng ký / Tư vấn)
   router.post(
