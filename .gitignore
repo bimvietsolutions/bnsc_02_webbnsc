@@ -10,3 +10,14 @@ setup/
 *_github_actions
 *_github_actions.pub
 *.pem
+
+# Tệp người dùng upload lúc chạy (giữ lại ảnh hero seed sẵn)
+public/uploads/*
+!public/uploads/hero/
+
+# Cấu hình Claude Code riêng của từng máy (settings.json dùng chung vẫn commit)
+.claude/settings.local.json
+
+# Sản phẩm sinh ra bởi ETL dữ liệu cũ (chạy lại bằng npm run legacy:mirror/import)
+scripts/legacy/media-manifest.json
+scripts/legacy/import-report.json

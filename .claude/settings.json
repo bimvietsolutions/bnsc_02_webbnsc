@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git restore *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "PowerShell(npm i jsonwebtoken bcryptjs cookie-parser 2>&1)",
+      "PowerShell(npm i -D \"@types/jsonwebtoken\" \"@types/bcryptjs\" \"@types/cookie-parser\" 2>&1)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 60; Write-Output \"EXIT=$LASTEXITCODE\")",
+      "PowerShell($env:DATABASE_URL=\"\"; npx prisma generate --schema db/schema.prisma 2>&1 | Select-String -Pattern \"Generated|Error|error|DATABASE_URL\" | Select-Object -First 5)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(npm i multer 2>&1)",
+      "PowerShell(npm i -D \"@types/multer\" 2>&1)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20; Write-Output \"tsc_exit=$LASTEXITCODE\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\(require\\('google-auth-library/package.json'\\).version\\)\")"
+    ]
+  }
+}
