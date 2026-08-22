@@ -585,7 +585,11 @@ RUN_USER="$(stat -c %u:%g $UPL)"
    tạo `$UPL`, áp `prisma migrate deploy`, mount volume và chạy container bằng
    đúng uid sở hữu thư mục đó, rồi chặn ở `/health/ready` (truy vấn bảng `articles`).
 
-3. **Nạp dữ liệu cấu hình site** (chỉ lần đầu):
+3. **KHÔNG chạy `db:seed` trên VPS này.** CSDL `demobnsc_db` đã có sẵn dữ liệu cấu
+   hình từ đợt dựng bằng `db.sql`, và `db:seed` gọi `deleteMany()` trên 8 bảng
+   (`nav_links`, `hero_slides`, `hero_stats`, `customers`, `consulting_services`,
+   `faqs`, `support_staff`, `remote_tools`) rồi ghi lại dữ liệu mặc định — mọi
+   chỉnh sửa qua trang admin sẽ mất. Chỉ chạy trên CSDL trống:
    ```bash
    docker run --rm --network pgnet --env-file $ENVF $IMAGE npm run db:seed
    ```
