@@ -16,3 +16,7 @@ plan
 # Dữ liệu lúc chạy: ảnh admin tải lên + ~2,8 GB ảnh mirror từ website cũ.
 # Chúng được gắn volume trên VPS, không được đưa vào build context.
 public/uploads
+
+# Manifest/report do ETL sinh ra, không đưa vào image
+scripts/legacy/media-manifest.json
+scripts/legacy/import-report.json

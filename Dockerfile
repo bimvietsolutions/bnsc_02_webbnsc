@@ -18,7 +18,21 @@ ENV PORT=3000
 COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/dist ./dist
-COPY package.json ./
+COPY package.json package-lock.json tsconfig.json ./
+
+# Nguồn cần cho các lệnh vận hành chạy ngay trong container:
+#   npm run db:deploy      -> db/schema.prisma + db/migrations
+#   npm run db:seed        -> db/seed.ts (import ../src/data)
+#   npm run legacy:import  -> scripts/legacy/*
+# (prisma CLI và tsx nằm ở dependencies chứ không phải devDependencies vì lý do này.)
+COPY --from=build /app/db ./db
+COPY --from=build /app/scripts ./scripts
+COPY --from=build /app/src ./src
+
+# Thư mục dữ liệu lúc chạy. Deploy mount thư mục của host đè lên đây, nên host
+# phải thuộc uid/gid 1000 (user `node`) — nếu không, mkdirSync trong
+# server/routes.upload.ts sẽ ném EACCES ngay lúc khởi động.
+RUN mkdir -p /app/public/uploads && chown -R node:node /app/public
 
 USER node
 EXPOSE 3000
