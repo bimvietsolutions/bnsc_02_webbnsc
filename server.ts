@@ -9,7 +9,13 @@ import { createPublicRouter } from "./server/routes.public";
 import { createAdminRouter } from "./server/routes.admin";
 import { createUploadRouter, UPLOAD_DIR } from "./server/routes.upload";
 import { createContentRouter } from "./server/routes.content";
-import { createRedirectMiddleware, createSitemapHandler } from "./server/routes.seo";
+import {
+  createRedirectMiddleware,
+  createSitemapHandler,
+  createRobotsHandler,
+  createNoIndexMiddleware,
+} from "./server/routes.seo";
+import { prisma } from "./server/db";
 
 dotenv.config();
 
@@ -32,6 +38,20 @@ async function startServer() {
 
   app.get("/health/live", (_req, res) => {
     res.status(200).json({ status: "ok" });
+  });
+
+  // Readiness: có chạm CSDL, khác /health/live chỉ báo tiến trình còn sống.
+  // Pipeline deploy dùng endpoint này làm cổng kiểm tra: nếu chỉ dựa vào
+  // /health/live thì một bản deploy thiếu migration vẫn báo "khỏe" trong khi
+  // mọi API nội dung trả 500. count() trên bảng articles bắt đúng ca đó.
+  app.get("/health/ready", async (_req, res) => {
+    try {
+      await prisma.article.count();
+      res.status(200).json({ status: "ready" });
+    } catch (err) {
+      console.error("health/ready:", err);
+      res.status(503).json({ status: "not-ready", error: (err as Error).message });
+    }
   });
 
   // Ensure Gemini Client is initialized safely
@@ -132,6 +152,10 @@ Lời khuyên cho bạn:
 
   // sitemap.xml sinh động từ CSDL (đặt trước express.static để ưu tiên bản động).
   app.get("/sitemap.xml", createSitemapHandler());
+
+  // robots.txt sinh động + chặn lập chỉ mục khi SITE_INDEXABLE chưa bật.
+  app.get("/robots.txt", createRobotsHandler());
+  app.use(createNoIndexMiddleware());
 
   // 301 các URL gốc của website cũ (bacnam.com.vn/<slug>) sang đường dẫn mới.
   app.use(createRedirectMiddleware());

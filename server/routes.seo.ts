@@ -6,6 +6,9 @@
  *     được 301 sang đường dẫn mới /tin-tuc/<slug>, /thu-vien/<slug>...
  *     Bảng `redirects` do script import sinh ra (1 dòng / bài).
  *  2. sitemapHandler — sinh sitemap.xml từ CSDL thay cho tệp tĩnh.
+ *  3. robotsHandler + noIndexMiddleware — chặn lập chỉ mục trên tên miền
+ *     chưa phải bản chính thức (mặc định), tránh Google đánh chỉ mục một bản
+ *     sao 555 trang trùng nội dung với site thật.
  */
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { prisma } from './db';
@@ -74,6 +77,63 @@ const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = 
 
 const escapeXml = (s: string) =>
   s.replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]!);
+
+/**
+ * Tên miền này có được phép lập chỉ mục không.
+ *
+ * Mặc định FALSE. Website chạy song song trên nhiều tên miền trong lúc chuyển
+ * đổi (bản demo/staging và bản chính thức); nếu bản chưa chính thức cũng cho
+ * Google vào thì thành 555 trang trùng nội dung cạnh tranh với site thật. Bật
+ * bằng SITE_INDEXABLE=true đúng vào lúc cắt tên miền sang bản mới.
+ */
+function isIndexable(): boolean {
+  return /^(1|true|yes)$/i.test((process.env.SITE_INDEXABLE ?? '').trim());
+}
+
+/**
+ * Chặn lập chỉ mục ở mức HTTP header. Mạnh hơn robots.txt: robots.txt chỉ ngăn
+ * *thu thập*, còn X-Robots-Tag ngăn *đánh chỉ mục* kể cả khi trang đã bị crawl
+ * từ trước hoặc được liên kết từ nơi khác.
+ */
+export function createNoIndexMiddleware(): RequestHandler {
+  return (_req: Request, res: Response, next: NextFunction) => {
+    if (!isIndexable()) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  };
+}
+
+/**
+ * robots.txt sinh động. Bản tĩnh trước đây ghi cứng "Allow: /" và trỏ sitemap
+ * vào bacnam.com.vn — dùng nguyên vậy trên tên miền demo là mời Google đánh chỉ
+ * mục bản sao.
+ */
+export function createRobotsHandler(): RequestHandler {
+  return (req: Request, res: Response) => {
+    res.type('text/plain');
+    if (!isIndexable()) {
+      res.send(
+        [
+          '# Ten mien nay chua phai ban chinh thuc (SITE_INDEXABLE chua bat).',
+          'User-agent: *',
+          'Disallow: /',
+          '',
+        ].join('\n'),
+      );
+      return;
+    }
+    res.send(
+      [
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /dang-nhap',
+        'Disallow: /admin',
+        '',
+        `Sitemap: ${siteOrigin(req)}/sitemap.xml`,
+        '',
+      ].join('\n'),
+    );
+  };
+}
 
 /**
  * Tên miền gốc cho sitemap. APP_URL có thể còn là chuỗi giữ chỗ (vd "MY_APP_URL"

@@ -510,23 +510,119 @@ Chạy lại bước 5 và 6 bao nhiêu lần cũng được — cả hai đều
 
 ### 10.2 Đưa lên VPS
 
-1. **Ảnh**: đồng bộ `public/uploads/legacy/` (2,83 GB) sang volume uploads của VPS.
+**Bối cảnh VPS (khảo sát 2026-08-22):** đăng nhập bằng `root`, **không cài node/npm**,
+Docker 29.5, còn ~15 GB trống. Vì vậy mọi lệnh vận hành chạy **bên trong container**
+dựng từ chính image vừa deploy — image đã chứa `db/`, `scripts/`, `prisma` CLI và `tsx`.
+Không cần cài node lên host.
+
+Đặt biến cho tiện gõ:
+
+```bash
+IMAGE=registry.bacnam.com.vn/bimvietsolutions/bnsc_02_webbnsc:latest
+ENVF=/home/deploy_demobnsc/app/.env
+UPL=/home/deploy_demobnsc/app/uploads
+EXPORT=/home/deploy_demobnsc/app/legacy-export   # thư mục JSON export, chép lên bằng scp
+```
+
+**BẮT BUỘC làm trước khi merge PR** (khảo sát VPS 2026-08-22 phát hiện):
+
+1. **`.env` thiếu `JWT_SECRET` và `APP_URL`.** Dòng thứ 4 của `.env` hiện là
+   `demobnsc_secure_jwt_secret_key_2026_vps=...` — chuỗi đó nằm ở vị trí *tên biến*
+   chứ không phải giá trị, nên `process.env.JWT_SECRET` rỗng và
+   `server/auth.ts` rơi về chuỗi dự phòng `bnsc-dev-secret-CHANGE-ME` vốn nằm công
+   khai trong mã nguồn: ai đọc repo cũng ký được cookie phiên admin hợp lệ. Bản này
+   đã chuyển sang **ném lỗi** thay vì cảnh báo, nên container sẽ không khởi động
+   được cho tới khi sửa:
    ```bash
-   rsync -avz --progress public/uploads/legacy/ user@vps:/srv/bnsc/uploads/legacy/
+   # sao lưu trước
+   cp $ENVF $ENVF.bak
+   sed -i 's/^demobnsc_secure_jwt_secret_key_2026_vps=/JWT_SECRET=/' $ENVF
+   grep -q '^APP_URL=' $ENVF || echo 'APP_URL=https://bacnam.com.vn' >> $ENVF
+   docker restart bnsc_demobnsc_app
    ```
-   Hoặc chạy thẳng `npm run legacy:mirror` **trên VPS** (nhanh hơn, khỏi truyền file) —
-   chỉ cần chép thư mục export JSON 14 MB lên trước.
-   Muốn tiết kiệm 423 MB thì xoá 2 biến thể giao diện mới không dùng:
+   Nếu chuỗi đó vốn là *giá trị* chứ không phải tên biến thì thay bằng
+   `echo 'JWT_SECRET=<chuỗi-ngẫu-nhiên-dài>' >> $ENVF` và xoá dòng cũ.
+
+2. **Tên miền và lập chỉ mục.** Caddy đang phục vụ bản này ở
+   `demobnsc.bacnam.com.vn`, còn `bacnam.com.vn` vẫn chạy trên VPS cũ. Vì vậy:
+   - `APP_URL` phải là **tên miền đang thật sự phục vụ**, nếu không sitemap và thẻ
+     canonical trỏ sang site khác.
+   - `SITE_INDEXABLE` để **false** (mặc định) chừng nào chưa cắt tên miền. Bật lên
+     là Google đánh chỉ mục 555 trang trùng nội dung với site thật.
    ```bash
-   find public/uploads/legacy -name 'image_600x460_*' -o -name 'image_140x98_*' | xargs rm -f
+   sed -i 's#^APP_URL=.*#APP_URL=https://demobnsc.bacnam.com.vn#' $ENVF
+   grep -q '^SITE_INDEXABLE=' $ENVF || echo 'SITE_INDEXABLE=false' >> $ENVF
    ```
-2. **CSDL**: `npm run db:deploy` rồi `npm run db:seed` và `npm run legacy:import`.
-3. **Biến môi trường**: đặt `APP_URL` thành `https://bacnam.com.vn` để sitemap và thẻ
-   canonical sinh đúng tên miền.
-4. **Kiểm tra sau deploy**:
-   - `curl -I https://bacnam.com.vn/<slug-cũ-bất-kỳ>` → phải trả `301`.
-   - `curl https://bacnam.com.vn/sitemap.xml | grep -c "<loc>"` → ~734 URL.
-   - Nộp lại sitemap trong Google Search Console.
+   Lúc cắt sang tên miền chính thức: đổi `APP_URL=https://bacnam.com.vn`, đặt
+   `SITE_INDEXABLE=true`, thêm block Caddy cho `bacnam.com.vn`, rồi
+   `docker restart bnsc_demobnsc_app`.
+
+3. **Baseline CSDL — chạy MỘT LẦN.** CSDL `demobnsc_db` được dựng bằng `db.sql`
+   qua pgAdmin nên không có bảng `_prisma_migrations`; `prisma migrate deploy`
+   sẽ dừng với **P3005 "The database schema is not empty"**. Đánh dấu migration
+   nền là đã áp (chỉ ghi nhận, không chạy SQL nào):
+   ```bash
+   docker run --rm --network pgnet --env-file $ENVF \
+     registry.bacnam.com.vn/bimvietsolutions/bnsc_02_webbnsc:latest \
+     npx prisma migrate resolve --applied 0_baseline --schema db/schema.prisma
+   ```
+   Sau bước này, `migrate deploy` chỉ áp migration thứ hai — thuần tạo 6 bảng mới
+   (`articles`, `categories`, `tags`, `series_nodes`, `redirects`, `_ArticleTags`),
+   không ALTER và không DROP bảng nào đang có. Đã kiểm chứng trên một CSDL mô phỏng
+   đúng 19 bảng của VPS.
+
+1. **Chép thư mục export lên VPS** (14 MB, từ máy dev):
+   ```bash
+   scp -r bacnamco_beta.json root@<vps>:/home/deploy_demobnsc/app/legacy-export
+   ```
+
+2. **Deploy** — merge vào `main`, GitHub Actions tự chạy. Pipeline đã lo:
+   tạo `$UPL` + `chown 1000:1000`, áp `prisma migrate deploy`, mount volume,
+   và chặn ở `/health/ready` (có truy vấn bảng `articles`).
+
+3. **Nạp dữ liệu cấu hình site** (chỉ lần đầu):
+   ```bash
+   docker run --rm --network pgnet --env-file $ENVF $IMAGE npm run db:seed
+   ```
+
+4. **Tải ảnh** — chạy ngay trên VPS, nhanh hơn rsync 2,83 GB từ máy dev rất nhiều:
+   ```bash
+   docker run --rm --network pgnet --env-file $ENVF \
+     -v $UPL:/app/public/uploads \
+     -v $EXPORT:/export:ro \
+     -e LEGACY_EXPORT_DIR=/export \
+     --user 1000:1000 \
+     $IMAGE npm run legacy:mirror
+   ```
+   Chạy lại được nhiều lần: tệp đã tải sẽ bỏ qua. Muốn tiết kiệm 423 MB thì xoá 2
+   biến thể giao diện mới không dùng:
+   ```bash
+   find $UPL/legacy -name 'image_600x460_*' -o -name 'image_140x98_*' | xargs -r rm -f
+   ```
+
+5. **Nạp 555 bài viết**:
+   ```bash
+   docker run --rm --network pgnet --env-file $ENVF \
+     -v $UPL:/app/public/uploads \
+     -v $EXPORT:/export:ro \
+     -e LEGACY_EXPORT_DIR=/export \
+     $IMAGE npm run legacy:import
+   ```
+   Upsert theo `legacyId` nên chạy lại nhiều lần vẫn ra cùng kết quả.
+
+6. **Biến môi trường**: `.env` phải có `JWT_SECRET` (đăng nhập admin) và
+   `APP_URL=https://bacnam.com.vn` (sitemap + thẻ canonical). Thiếu `APP_URL` thì
+   sitemap lùi về host của request; thiếu `JWT_SECRET` thì không đăng nhập admin được.
+   Sửa `.env` xong phải `docker restart bnsc_demobnsc_app` — env-file chỉ đọc lúc tạo container.
+
+7. **Kiểm tra sau deploy**:
+   ```bash
+   curl -s https://bacnam.com.vn/health/ready                       # {"status":"ready"}
+   curl -sI https://bacnam.com.vn/<slug-cũ-bất-kỳ> | head -2        # 301
+   curl -s https://bacnam.com.vn/sitemap.xml | grep -c "<loc>"      # ~734
+   curl -sI https://bacnam.com.vn/uploads/legacy/images/... | head -2  # 200 + cache immutable
+   ```
+   Rồi nộp lại sitemap trong Google Search Console.
 
 ### 10.3 Lưu ý cấu hình đã thay đổi
 
