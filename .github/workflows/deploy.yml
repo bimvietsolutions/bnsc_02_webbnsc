@@ -119,11 +119,24 @@ jobs:
             # chạy không bị ảnh hưởng trong lúc áp. Hỏng thì dừng tại đây, chưa ai
             # bị gián đoạn.
             echo "== Áp migration =="
-            docker run --rm \
+            if ! docker run --rm \
               --network "${APP_NETWORK}" \
               --env-file "${APP_ENV_FILE}" \
               "${IMAGE}" \
-              npx prisma migrate deploy --schema db/schema.prisma
+              npx prisma migrate deploy --schema db/schema.prisma; then
+              echo "-------------------------------------------------------------"
+              echo "Migration that bai. Neu loi la P3005 (schema khong rong) thi"
+              echo "day la CSDL dung truoc khi du an dung Prisma. Chay MOT LAN:"
+              echo ""
+              echo "  docker run --rm --network ${APP_NETWORK} \\"
+              echo "    --env-file ${APP_ENV_FILE} ${IMAGE} \\"
+              echo "    npx prisma migrate resolve --applied 0_baseline \\"
+              echo "    --schema db/schema.prisma"
+              echo ""
+              echo "roi chay lai workflow. Container dang phuc vu chua bi dung."
+              echo "-------------------------------------------------------------"
+              exit 1
+            fi
 
             docker rm -f "${PREVIOUS_CONTAINER}" 2>/dev/null || true
             if docker container inspect "${APP_CONTAINER}" >/dev/null 2>&1; then

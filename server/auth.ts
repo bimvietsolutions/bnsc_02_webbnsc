@@ -18,8 +18,14 @@ const isProd = process.env.NODE_ENV === 'production';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
+// Dừng hẳn thay vì cảnh báo: chuỗi dự phòng nằm công khai trong mã nguồn, nên
+// nếu production chạy với nó thì bất kỳ ai đọc repo cũng ký được cookie phiên
+// admin hợp lệ. Thà deploy đỏ còn hơn chạy với phiên đăng nhập giả mạo được.
 if (isProd && JWT_SECRET === 'bnsc-dev-secret-CHANGE-ME') {
-  console.warn('⚠ JWT_SECRET chưa được đặt trong môi trường production!');
+  throw new Error(
+    'JWT_SECRET chưa được đặt. Production không được dùng chuỗi dự phòng công khai — ' +
+      'đặt JWT_SECRET trong .env rồi khởi động lại container.',
+  );
 }
 
 export interface AdminPayload {

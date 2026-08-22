@@ -524,6 +524,39 @@ UPL=/home/deploy_demobnsc/app/uploads
 EXPORT=/home/deploy_demobnsc/app/legacy-export   # thư mục JSON export, chép lên bằng scp
 ```
 
+**BẮT BUỘC làm trước khi merge PR** (khảo sát VPS 2026-08-22 phát hiện):
+
+1. **`.env` thiếu `JWT_SECRET` và `APP_URL`.** Dòng thứ 4 của `.env` hiện là
+   `demobnsc_secure_jwt_secret_key_2026_vps=...` — chuỗi đó nằm ở vị trí *tên biến*
+   chứ không phải giá trị, nên `process.env.JWT_SECRET` rỗng và
+   `server/auth.ts` rơi về chuỗi dự phòng `bnsc-dev-secret-CHANGE-ME` vốn nằm công
+   khai trong mã nguồn: ai đọc repo cũng ký được cookie phiên admin hợp lệ. Bản này
+   đã chuyển sang **ném lỗi** thay vì cảnh báo, nên container sẽ không khởi động
+   được cho tới khi sửa:
+   ```bash
+   # sao lưu trước
+   cp $ENVF $ENVF.bak
+   sed -i 's/^demobnsc_secure_jwt_secret_key_2026_vps=/JWT_SECRET=/' $ENVF
+   grep -q '^APP_URL=' $ENVF || echo 'APP_URL=https://bacnam.com.vn' >> $ENVF
+   docker restart bnsc_demobnsc_app
+   ```
+   Nếu chuỗi đó vốn là *giá trị* chứ không phải tên biến thì thay bằng
+   `echo 'JWT_SECRET=<chuỗi-ngẫu-nhiên-dài>' >> $ENVF` và xoá dòng cũ.
+
+2. **Baseline CSDL — chạy MỘT LẦN.** CSDL `demobnsc_db` được dựng bằng `db.sql`
+   qua pgAdmin nên không có bảng `_prisma_migrations`; `prisma migrate deploy`
+   sẽ dừng với **P3005 "The database schema is not empty"**. Đánh dấu migration
+   nền là đã áp (chỉ ghi nhận, không chạy SQL nào):
+   ```bash
+   docker run --rm --network pgnet --env-file $ENVF \
+     registry.bacnam.com.vn/bimvietsolutions/bnsc_02_webbnsc:latest \
+     npx prisma migrate resolve --applied 0_baseline --schema db/schema.prisma
+   ```
+   Sau bước này, `migrate deploy` chỉ áp migration thứ hai — thuần tạo 6 bảng mới
+   (`articles`, `categories`, `tags`, `series_nodes`, `redirects`, `_ArticleTags`),
+   không ALTER và không DROP bảng nào đang có. Đã kiểm chứng trên một CSDL mô phỏng
+   đúng 19 bảng của VPS.
+
 1. **Chép thư mục export lên VPS** (14 MB, từ máy dev):
    ```bash
    scp -r bacnamco_beta.json root@<vps>:/home/deploy_demobnsc/app/legacy-export
