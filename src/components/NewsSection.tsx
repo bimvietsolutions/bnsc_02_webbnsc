@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Eye, ArrowRight, BookOpen, ChevronRight, Search, X, User } from 'lucide-react';
 import { useApi } from '../lib/api';
+import { useCategories } from '../lib/content';
 import { newsFallback, mapNews, type ApiNews } from '../lib/publicData';
 
 type NewsItem = ApiNews;
@@ -16,16 +17,22 @@ export default function NewsSection() {
 
   const openArticle = (item: NewsItem) => navigate(`/tin-tuc/${item.slug}`);
 
-  const tabs = ['Tất cả', 'Nội bộ', 'Chuyên ngành', 'Văn bản QPPL', 'Khuyến mãi'];
+  // Tab lấy từ CSDL (bảng categories) thay vì danh sách cứng — thêm/bớt danh mục
+  // trong trang quản trị là giao diện tự cập nhật, kèm số bài thật.
+  const { leaves: newsCategories } = useCategories('NEWS');
 
-  // Preserved static category counts to perfectly align with user's screenshot counts
-  const tabCounts: Record<string, number> = {
-    'Tất cả': 42,
-    'Nội bộ': 12,
-    'Chuyên ngành': 18,
-    'Văn bản QPPL': 28,
-    'Khuyến mãi': 5
-  };
+  const tabs = useMemo(
+    () => ['Tất cả', ...newsCategories.map((c) => c.name)],
+    [newsCategories],
+  );
+
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      'Tất cả': newsCategories.reduce((sum, c) => sum + c.articleCount, 0),
+    };
+    for (const c of newsCategories) counts[c.name] = c.articleCount;
+    return counts;
+  }, [newsCategories]);
 
   const getCategoryTheme = (category: string) => {
     switch (category) {

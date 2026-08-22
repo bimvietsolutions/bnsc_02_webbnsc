@@ -6,12 +6,16 @@
 import {
   Newspaper, BookOpen, Package, Users, Image, BarChart3, Layers, GraduationCap,
   HelpCircle, Headphones, MonitorSmartphone, Menu, Settings, Inbox, ShieldCheck,
-  FileImage, type LucideIcon,
+  FileImage, Tags, ListTree, Link2, type LucideIcon,
 } from 'lucide-react';
 
 export type FieldType =
   | 'text' | 'textarea' | 'number' | 'boolean' | 'select' | 'array'
-  | 'image' | 'relation' | 'password' | 'readonly' | 'datetime';
+  | 'image' | 'relation' | 'password' | 'readonly' | 'datetime'
+  // Soạn thảo HTML có thanh công cụ — dùng cho nội dung bài viết chuyển từ site cũ
+  | 'richtext'
+  // Danh sách thẻ (nhập tự do, lưu dưới dạng mảng slug)
+  | 'tags';
 
 export interface FieldDef {
   name: string;
@@ -33,6 +37,13 @@ export interface ColumnDef {
   type?: 'text' | 'boolean' | 'badge' | 'datetime';
 }
 
+/** Bộ lọc dạng select ở đầu trang danh sách (khớp filterFields ở server). */
+export interface FilterDef {
+  name: string;
+  label: string;
+  options: { value: string; label: string }[];
+}
+
 export interface ResourceDef {
   slug: string;
   label: string;
@@ -42,7 +53,17 @@ export interface ResourceDef {
   columns: ColumnDef[];
   fields: FieldDef[];
   canCreate?: boolean;
+  /** Hiện ô tìm kiếm (server phải khai báo searchFields tương ứng). */
+  searchable?: boolean;
+  filters?: FilterDef[];
 }
+
+const SECTION_OPTIONS = [
+  { value: 'NEWS', label: 'Tin tức' },
+  { value: 'LIBRARY', label: 'Thư viện' },
+  { value: 'CONSULTING', label: 'Tư vấn' },
+  { value: 'TRAINING', label: 'Đào tạo' },
+];
 
 const F = {
   sortOrder: { name: 'sortOrder', label: 'Thứ tự', type: 'number' as const },
@@ -57,7 +78,123 @@ const seo: FieldDef[] = [
 
 export const resourceDefs: ResourceDef[] = [
   {
-    slug: 'news', label: 'Tin tức', singular: 'tin tức', icon: Newspaper, group: 'Nội dung',
+    slug: 'articles', label: 'Bài viết', singular: 'bài viết', icon: Newspaper, group: 'Nội dung',
+    searchable: true,
+    filters: [
+      { name: 'section', label: 'Mảng', options: SECTION_OPTIONS },
+      { name: 'isPublished', label: 'Xuất bản', options: [{ value: 'true', label: 'Đã xuất bản' }, { value: 'false', label: 'Bản nháp' }] },
+    ],
+    columns: [
+      { name: 'title', label: 'Tiêu đề' },
+      { name: 'section', label: 'Mảng', type: 'badge' },
+      { name: 'category', label: 'Danh mục', accessor: (r) => r.category?.name },
+      { name: 'publishedAt', label: 'Đăng lúc', type: 'datetime' },
+      { name: 'views', label: 'Lượt xem' },
+      { name: 'isPublished', label: 'Xuất bản', type: 'boolean' },
+    ],
+    fields: [
+      { name: 'title', label: 'Tiêu đề', type: 'text', required: true, full: true },
+      { name: 'slug', label: 'Slug (URL)', type: 'text', required: true, help: 'Không dấu, duy nhất trên toàn site. Đổi slug sẽ làm hỏng liên kết cũ.' },
+      { name: 'section', label: 'Mảng nội dung', type: 'select', options: SECTION_OPTIONS, required: true },
+      { name: 'categoryId', label: 'Danh mục', type: 'relation', relation: { resource: 'categories', labelField: 'name' } },
+      { name: 'summary', label: 'Tóm tắt', type: 'textarea', full: true, help: 'Dùng cho thẻ bài và meta description.' },
+      { name: 'contentHtml', label: 'Nội dung', type: 'richtext', full: true },
+      { name: 'tagSlugs', label: 'Thẻ chuyên đề', type: 'tags', full: true },
+      { name: 'coverUrl', label: 'Ảnh bìa (URL)', type: 'image' },
+      { name: 'thumbUrl', label: 'Ảnh nhỏ danh sách (URL)', type: 'image' },
+      { name: 'coverAlt', label: 'Mô tả ảnh (alt)', type: 'text' },
+      { name: 'videoUrl', label: 'Video (URL YouTube)', type: 'text' },
+      { name: 'author', label: 'Tác giả', type: 'text' },
+      { name: 'publishedAt', label: 'Thời điểm đăng', type: 'datetime' },
+      { name: 'dateText', label: 'Ngày hiển thị (ghi đè)', type: 'text', help: 'Bỏ trống để tự sinh từ thời điểm đăng.' },
+      { name: 'views', label: 'Lượt xem', type: 'number' },
+      { name: 'attachmentUrl', label: 'Tệp đính kèm (URL)', type: 'text' },
+      { name: 'attachmentName', label: 'Tên tệp', type: 'text' },
+      { name: 'attachmentSize', label: 'Dung lượng', type: 'text' },
+      { name: 'isPublished', label: 'Xuất bản', type: 'boolean' },
+      { name: 'isFeatured', label: 'Nổi bật', type: 'boolean' },
+      { name: 'isRecommended', label: 'Đề xuất', type: 'boolean' },
+      { name: 'isBreaking', label: 'Tin nóng', type: 'boolean' },
+      { name: 'isSlider', label: 'Đưa lên slider trang chủ', type: 'boolean' },
+      { name: 'sliderOrder', label: 'Thứ tự trong slider', type: 'number' },
+      ...seo,
+      { name: 'metaKeywords', label: 'SEO Keywords', type: 'text' },
+      { name: 'canonicalUrl', label: 'Canonical URL', type: 'text' },
+    ],
+  },
+  {
+    slug: 'categories', label: 'Danh mục', singular: 'danh mục', icon: Layers, group: 'Nội dung',
+    searchable: true,
+    filters: [{ name: 'section', label: 'Mảng', options: SECTION_OPTIONS }],
+    columns: [
+      { name: 'name', label: 'Tên' },
+      { name: 'slug', label: 'Slug' },
+      { name: 'section', label: 'Mảng', type: 'badge' },
+      { name: 'parent', label: 'Thuộc mục', accessor: (r) => r.parent?.name },
+      { name: 'sortOrder', label: 'Thứ tự' },
+      { name: 'isActive', label: 'Hiển thị', type: 'boolean' },
+    ],
+    fields: [
+      { name: 'name', label: 'Tên', type: 'text', required: true },
+      { name: 'slug', label: 'Slug', type: 'text', required: true },
+      { name: 'section', label: 'Mảng nội dung', type: 'select', options: SECTION_OPTIONS, required: true },
+      { name: 'parentId', label: 'Thuộc mục cha', type: 'relation', relation: { resource: 'categories', labelField: 'name' }, help: 'Bỏ trống nếu đây là mục gốc.' },
+      { name: 'title', label: 'Tiêu đề SEO', type: 'text', full: true },
+      { name: 'description', label: 'Mô tả', type: 'textarea', full: true },
+      { name: 'emoji', label: 'Biểu tượng tab', type: 'text', help: 'Một emoji, vd ⚙ ▶ 🔍' },
+      { name: 'color', label: 'Màu nhãn', type: 'text', help: 'vd #1B5FA8' },
+      { name: 'showOnMenu', label: 'Hiện trên menu', type: 'boolean' },
+      { name: 'showAtHomepage', label: 'Hiện ở trang chủ', type: 'boolean' },
+      F.sortOrder, F.isActive,
+    ],
+  },
+  {
+    slug: 'tags', label: 'Thẻ chuyên đề', singular: 'thẻ', icon: Tags, group: 'Nội dung',
+    searchable: true,
+    columns: [
+      { name: 'name', label: 'Tên thẻ' },
+      { name: 'slug', label: 'Slug' },
+    ],
+    fields: [
+      { name: 'name', label: 'Tên thẻ', type: 'text', required: true, full: true },
+      { name: 'slug', label: 'Slug', type: 'text', required: true, help: 'Dùng trong URL /tag/<slug>' },
+    ],
+  },
+  {
+    slug: 'series', label: 'Mục lục giáo trình', singular: 'mục', icon: ListTree, group: 'Nội dung',
+    searchable: true,
+    columns: [
+      { name: 'title', label: 'Tiêu đề mục' },
+      { name: 'article', label: 'Bài gắn kèm', accessor: (r) => r.article?.title },
+      { name: 'sortOrder', label: 'Thứ tự' },
+      { name: 'isActive', label: 'Hiển thị', type: 'boolean' },
+    ],
+    fields: [
+      { name: 'title', label: 'Tiêu đề mục', type: 'text', required: true, full: true },
+      { name: 'slug', label: 'Slug', type: 'text', required: true },
+      { name: 'parentId', label: 'Thuộc phần', type: 'relation', relation: { resource: 'series', labelField: 'title' }, help: 'Bỏ trống nếu đây là giáo trình gốc.' },
+      { name: 'articleId', label: 'Bài viết gắn kèm', type: 'relation', relation: { resource: 'articles', labelField: 'title' }, help: 'Bỏ trống nếu mục chưa có nội dung.' },
+      F.sortOrder, F.isActive,
+    ],
+  },
+  {
+    slug: 'redirects', label: 'Chuyển hướng 301', singular: 'chuyển hướng', icon: Link2, group: 'Nội dung',
+    searchable: true,
+    columns: [
+      { name: 'from', label: 'URL cũ' },
+      { name: 'to', label: 'URL mới' },
+      { name: 'status', label: 'Mã' },
+      { name: 'hits', label: 'Lượt dùng' },
+    ],
+    fields: [
+      { name: 'from', label: 'URL cũ', type: 'text', required: true, full: true, help: 'Bắt đầu bằng /, vd /vinh-long-quyet-dinh-325' },
+      { name: 'to', label: 'URL mới', type: 'text', required: true, full: true },
+      { name: 'status', label: 'Mã HTTP', type: 'number', help: '301 (vĩnh viễn) hoặc 302 (tạm thời)' },
+      { name: 'hits', label: 'Lượt dùng', type: 'readonly' },
+    ],
+  },
+  {
+    slug: 'news', label: 'Tin tức (bảng cũ)', singular: 'tin tức', icon: Newspaper, group: 'Dữ liệu cũ',
     columns: [
       { name: 'title', label: 'Tiêu đề' },
       { name: 'category', label: 'Danh mục', accessor: (r) => r.category?.name },
@@ -79,7 +216,7 @@ export const resourceDefs: ResourceDef[] = [
     ],
   },
   {
-    slug: 'library', label: 'Thư viện', singular: 'bài thư viện', icon: BookOpen, group: 'Nội dung',
+    slug: 'library', label: 'Thư viện (bảng cũ)', singular: 'bài thư viện', icon: BookOpen, group: 'Dữ liệu cũ',
     columns: [
       { name: 'title', label: 'Tiêu đề' },
       { name: 'category', label: 'Danh mục', accessor: (r) => r.category?.name },
@@ -258,7 +395,7 @@ export const resourceDefs: ResourceDef[] = [
     ],
   },
   {
-    slug: 'news-categories', label: 'Danh mục Tin tức', singular: 'danh mục', icon: Layers, group: 'Cấu trúc',
+    slug: 'news-categories', label: 'Danh mục Tin tức (cũ)', singular: 'danh mục', icon: Layers, group: 'Dữ liệu cũ',
     columns: [
       { name: 'name', label: 'Tên' },
       { name: 'slug', label: 'Slug' },
@@ -271,7 +408,7 @@ export const resourceDefs: ResourceDef[] = [
     ],
   },
   {
-    slug: 'library-categories', label: 'Danh mục Thư viện', singular: 'danh mục', icon: Layers, group: 'Cấu trúc',
+    slug: 'library-categories', label: 'Danh mục Thư viện (cũ)', singular: 'danh mục', icon: Layers, group: 'Dữ liệu cũ',
     columns: [
       { name: 'name', label: 'Tên' },
       { name: 'slug', label: 'Slug' },
@@ -302,6 +439,11 @@ export const resourceDefs: ResourceDef[] = [
   {
     slug: 'leads', label: 'Lead (đăng ký)', singular: 'lead', icon: Inbox, group: 'Hệ thống',
     canCreate: false,
+    searchable: true,
+    filters: [
+      { name: 'status', label: 'Trạng thái', options: [{ value: 'NEW', label: 'Mới' }, { value: 'CONTACTED', label: 'Đã liên hệ' }, { value: 'DONE', label: 'Hoàn tất' }, { value: 'SPAM', label: 'Spam' }] },
+      { name: 'type', label: 'Loại', options: [{ value: 'DOWNLOAD', label: 'Tải phần mềm' }, { value: 'REGISTER', label: 'Đăng ký' }, { value: 'CONSULT', label: 'Tư vấn' }] },
+    ],
     columns: [
       { name: 'fullName', label: 'Họ tên' },
       { name: 'phone', label: 'Điện thoại' },
@@ -356,4 +498,6 @@ export const resourceBySlug = (slug: string) => resourceDefs.find((r) => r.slug 
 
 export const resourceGroups = [
   'Nội dung', 'Trang chủ', 'Tư vấn & Đào tạo', 'Hỗ trợ', 'Cấu trúc', 'Hệ thống',
+  // Giữ tới khi cutover xong rồi mới gỡ (xem plan/07, giai đoạn P7).
+  'Dữ liệu cũ',
 ];

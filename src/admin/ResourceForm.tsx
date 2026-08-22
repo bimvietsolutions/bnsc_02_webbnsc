@@ -1,13 +1,77 @@
 /**
  * admin/ResourceForm.tsx — Biểu mẫu tạo/sửa generic theo cấu hình resource.
  */
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import { adminGet, adminCreate, adminUpdate, adminList } from './api';
+import { ArrowLeft, Loader2, Save, Upload, X } from 'lucide-react';
+import { adminGet, adminCreate, adminUpdate, uploadFile } from './api';
 import { resourceBySlug, type FieldDef } from './resources';
+// TipTap nặng ~350KB nên chỉ nạp khi thực sự mở biểu mẫu có trường richtext.
+const RichTextEditor = lazy(() => import('./RichTextEditor'));
+import { RelationField, TagsField } from './FormFields';
 
 type Values = Record<string, any>;
+
+/** Trường ảnh: nhập URL hoặc tải tệp lên (POST /api/admin/upload). */
+function ImageField({ value, onChange }: { value?: string; onChange: (url: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const pick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    setUploading(true);
+    try {
+      const r = await uploadFile(file);
+      onChange(r.url);
+    } catch (err: any) {
+      setError(err?.message || 'Lỗi upload');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://… hoặc tải ảnh lên"
+          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#1B5FA8] focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-1.5 bg-[#0B2545] hover:bg-[#1B5FA8] text-white text-sm font-semibold px-3 rounded-lg disabled:opacity-60"
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          Tải lên
+        </button>
+        <input ref={inputRef} type="file" accept="image/*" hidden onChange={pick} />
+      </div>
+      {error && <p className="text-[11px] text-rose-600 mt-1">{error}</p>}
+      {value ? (
+        <div className="relative inline-block mt-2">
+          <img src={value} alt="" className="h-24 rounded-lg object-cover border border-slate-200" />
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="absolute -top-2 -right-2 bg-white border border-slate-200 rounded-full p-0.5 shadow hover:text-rose-600"
+            title="Xóa ảnh"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function defaultValue(f: FieldDef): any {
   switch (f.type) {
@@ -29,31 +93,9 @@ export default function ResourceForm() {
   const isEdit = !!id && id !== 'new';
 
   const [values, setValues] = useState<Values>({});
-  const [relOptions, setRelOptions] = useState<Record<string, { value: string; label: string }[]>>({});
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-
-  const relationFields = useMemo(() => (def?.fields ?? []).filter((f) => f.type === 'relation'), [def]);
-
-  // Nạp options cho các trường quan hệ.
-  useEffect(() => {
-    relationFields.forEach((f) => {
-      if (!f.relation) return;
-      adminList(f.relation.resource)
-        .then((r) =>
-          setRelOptions((prev) => ({
-            ...prev,
-            [f.name]: r.data.map((row: any) => ({
-              value: String(row.id),
-              label: String(row[f.relation!.labelField] ?? row.id),
-            })),
-          })),
-        )
-        .catch(() => {});
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resource]);
 
   // Nạp dữ liệu khi sửa; khởi tạo mặc định khi tạo mới.
   useEffect(() => {
@@ -89,8 +131,13 @@ export default function ResourceForm() {
           payload[f.name] = v;
           continue;
         }
+        if (f.type === 'readonly') continue; // hiển thị thôi, không ghi
         if (f.type === 'number' || f.type === 'relation') {
           v = v === '' || v === null || v === undefined ? null : Number(v);
+        } else if (f.type === 'datetime') {
+          v = v ? new Date(v).toISOString() : null;
+        } else if (f.type === 'tags') {
+          v = Array.isArray(v) ? v : [];
         } else if (f.type === 'array') {
           v = Array.isArray(v)
             ? v
@@ -178,34 +225,45 @@ export default function ResourceForm() {
         );
       case 'relation':
         return (
-          <select
-            value={v == null ? '' : String(v)}
+          <RelationField
+            value={v}
+            resource={f.relation!.resource}
+            labelField={f.relation!.labelField}
+            onChange={(next) => setVal(f.name, next)}
+          />
+        );
+      case 'richtext':
+        return (
+          <Suspense
+            fallback={
+              <div className="border border-slate-200 rounded-lg p-4 text-sm text-slate-400 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Đang nạp trình soạn thảo…
+              </div>
+            }
+          >
+            <RichTextEditor value={v} onChange={(html) => setVal(f.name, html)} />
+          </Suspense>
+        );
+      case 'tags':
+        return <TagsField value={v} onChange={(slugs) => setVal(f.name, slugs)} />;
+      case 'datetime':
+        return (
+          <input
+            type="datetime-local"
+            // <input datetime-local> cần "YYYY-MM-DDTHH:mm", còn API trả ISO có múi giờ
+            value={v ? String(v).slice(0, 16) : ''}
             onChange={(e) => setVal(f.name, e.target.value)}
             className={inputCls}
-          >
-            <option value="">— Chọn —</option>
-            {(relOptions[f.name] ?? []).map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          />
+        );
+      case 'readonly':
+        return (
+          <p className="border border-slate-100 bg-slate-50 rounded-lg px-3 py-2 text-sm text-slate-500">
+            {v == null || v === '' ? '—' : String(v)}
+          </p>
         );
       case 'image':
-        return (
-          <div>
-            <input
-              type="text"
-              value={v ?? ''}
-              onChange={(e) => setVal(f.name, e.target.value)}
-              className={inputCls}
-              placeholder="https://…"
-            />
-            {v ? (
-              <img src={v} alt="" className="mt-2 h-20 rounded-lg object-cover border border-slate-200" />
-            ) : null}
-          </div>
-        );
+        return <ImageField value={v} onChange={(url) => setVal(f.name, url)} />;
       default:
         return (
           <input
@@ -219,7 +277,7 @@ export default function ResourceForm() {
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       <Link
         to={`/admin/${resource}`}
         className="inline-flex items-center gap-1.5 text-sm text-[#1B5FA8] font-semibold mb-4 hover:underline"
@@ -243,7 +301,14 @@ export default function ResourceForm() {
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {def.fields.map((f) => (
-              <div key={f.name} className={f.full || f.type === 'textarea' || f.type === 'array' ? 'sm:col-span-2' : ''}>
+              <div
+                key={f.name}
+                className={
+                  f.full || ['textarea', 'array', 'richtext', 'tags'].includes(f.type)
+                    ? 'sm:col-span-2'
+                    : ''
+                }
+              >
                 <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wide mb-1.5">
                   {f.label} {f.required && <span className="text-rose-500">*</span>}
                 </label>

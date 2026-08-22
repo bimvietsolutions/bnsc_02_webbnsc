@@ -12,3 +12,7 @@ plan
 *.log
 *_github_actions*
 *.pem
+
+# Dữ liệu lúc chạy: ảnh admin tải lên + ~2,8 GB ảnh mirror từ website cũ.
+# Chúng được gắn volume trên VPS, không được đưa vào build context.
+public/uploads

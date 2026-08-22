@@ -6,13 +6,11 @@
  *   Chạy:  npx prisma db seed --schema db/schema.prisma
  *   (đã cấu hình "prisma.seed" trong package.json)
  *
- * Nội dung tin tức / thư viện / sản phẩm / khách hàng được import trực tiếp từ
- * src/data để tránh chép tay; phần còn lại (hero, khóa học, FAQ, hỗ trợ, cấu
- * hình) khai báo ngay trong file này.
+ * Chỉ nạp dữ liệu CẤU HÌNH SITE (hero, sản phẩm, khách hàng, khóa học, FAQ, hỗ
+ * trợ, cấu hình, tài khoản admin). Nội dung bài viết KHÔNG nằm ở đây — nạp bằng
+ * `npm run legacy:import` vào bộ bảng hợp nhất articles/categories/tags.
  */
 import { PrismaClient, FaqScope } from '@prisma/client';
-import { newsArticles } from '../src/data/news';
-import { libraryArticles } from '../src/data/library';
 import { products, customersList, navLinks, heroStats } from '../src/data';
 
 const prisma = new PrismaClient();
@@ -169,18 +167,6 @@ const settings: { key: string; value: string; group: string; label: string }[] =
   { key: 'ai_system_prompt', value: AI_SYSTEM_PROMPT, group: 'ai', label: 'Prompt hệ thống Trợ lý AI' },
 ];
 
-// Slug đơn giản cho tên danh mục (ascii hóa cơ bản, bỏ dấu tiếng Việt).
-function slugForCategory(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
-}
-
 // -----------------------------------------------------------------------------
 
 async function seedSettings() {
@@ -241,64 +227,6 @@ async function seedProducts() {
       where: { slug: p.id },
       update: data,
       create: { slug: p.id, ...data },
-    });
-  }
-}
-
-async function seedNews() {
-  const names = [...new Set(newsArticles.map((a) => a.category))];
-  const map = new Map<string, number>();
-  for (let i = 0; i < names.length; i++) {
-    const cat = await prisma.newsCategory.upsert({
-      where: { name: names[i] },
-      update: { sortOrder: i },
-      create: { name: names[i], slug: slugForCategory(names[i]), sortOrder: i },
-    });
-    map.set(names[i], cat.id);
-  }
-  for (const a of newsArticles) {
-    const data = {
-      title: a.title,
-      excerpt: a.excerpt,
-      contentBody: a.contentBody,
-      imageUrl: a.imageUrl ?? null,
-      categoryId: map.get(a.category)!,
-      dateText: a.date,
-      views: a.views,
-    };
-    await prisma.newsArticle.upsert({
-      where: { slug: a.slug },
-      update: data,
-      create: { slug: a.slug, ...data },
-    });
-  }
-}
-
-async function seedLibrary() {
-  const names = [...new Set(libraryArticles.map((a) => a.category))];
-  const map = new Map<string, number>();
-  for (let i = 0; i < names.length; i++) {
-    const cat = await prisma.libraryCategory.upsert({
-      where: { name: names[i] },
-      update: { sortOrder: i },
-      create: { name: names[i], slug: slugForCategory(names[i]), sortOrder: i },
-    });
-    map.set(names[i], cat.id);
-  }
-  for (const a of libraryArticles) {
-    const data = {
-      title: a.title,
-      summary: a.summary,
-      imageUrl: a.imageUrl ?? null,
-      author: a.author,
-      categoryId: map.get(a.category)!,
-      dateText: a.date,
-      views: a.views,
-    };
-    await prisma.libraryArticle.upsert({
-      where: { slug: a.slug },
-      update: data,
-      create: { slug: a.slug, ...data },
     });
   }
 }
@@ -367,8 +295,6 @@ async function main() {
   await seedNav();
   await seedHero();
   await seedProducts();
-  await seedNews();
-  await seedLibrary();
   await seedCustomers();
   await seedConsulting();
   await seedFaqs();

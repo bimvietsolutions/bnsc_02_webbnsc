@@ -49,6 +49,18 @@ export default function Navbar({ onDownloadClick, onLoginClick, onRegisterClick 
 
   const handleLinkClick = (href: string) => {
     setIsMobileMenuOpen(false);
+
+    // Liên kết tới trang thật (/tin-tuc, /thu-vien, /tu-van, /dao-tao, /huong-dan...)
+    // — nav_links trong CSDL nay có thể chứa cả đường dẫn lẫn hash cũ.
+    if (href.startsWith('/')) {
+      navigate(href);
+      return;
+    }
+    if (/^https?:\/\//i.test(href)) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     const targetId = href.replace('#', '');
     // Các section thuộc trang chủ: nếu đang ở trang khác thì điều hướng về "/#id",
     // ScrollManager sẽ tự cuộn tới section sau khi trang chủ render.

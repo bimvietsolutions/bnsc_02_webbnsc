@@ -6,6 +6,11 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
+    // Tài nguyên tĩnh của trang nằm ở static/, KHÔNG phải public/.
+    // public/uploads là dữ liệu lúc chạy (ảnh admin tải lên + ~2,8 GB ảnh mirror
+    // từ website cũ) do Express phục vụ trực tiếp tại /uploads; để nó trong
+    // publicDir sẽ khiến mỗi lần build copy toàn bộ vào dist/.
+    publicDir: 'static',
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

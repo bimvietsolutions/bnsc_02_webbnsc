@@ -340,3 +340,144 @@ model Media {
 
   @@map("media")
 }
+
+// =============================================================================
+// NỘI DUNG HỢP NHẤT (migration từ website cũ bacnam.com.vn)
+// -----------------------------------------------------------------------------
+// Thay cho cặp News*/Library* rời rạc: một model Article duy nhất, phân biệt
+// bằng `section`, kèm Category dạng cây, Tag, SeriesNode (mục lục giáo trình)
+// và Redirect (301 từ URL cũ). Xem plan/07-ke-hoach-migration-du-lieu-cu.md.
+// Các model news_articles / library_articles cũ được giữ tới khi cutover xong.
+// =============================================================================
+
+enum ContentSection {
+  NEWS // Tin tức
+  LIBRARY // Thư viện hướng dẫn (Dự toán BNSC)
+  CONSULTING // Tư vấn kinh tế xây dựng
+  TRAINING // Đào tạo nghiệp vụ
+}
+
+// Danh mục dạng cây: node gốc = "mảng" (Tin tức, Dự toán BNSC...), node con =
+// danh mục thật gắn bài viết. `section` được nhân bản xuống con để lọc 1 bước.
+model Category {
+  id             Int            @id @default(autoincrement())
+  slug           String         @unique
+  name           String
+  title          String? // tiêu đề dùng cho SEO của trang danh mục
+  section        ContentSection
+  parentId       Int?
+  parent         Category?      @relation("CatTree", fields: [parentId], references: [id])
+  children       Category[]     @relation("CatTree")
+  description    String?        @db.Text
+  keywords       String?
+  color          String? // mã màu nhãn (#ff0000)
+  emoji          String? // biểu tượng tab ở Thư viện
+  sortOrder      Int            @default(0)
+  showOnMenu     Boolean        @default(true)
+  showAtHomepage Boolean        @default(false)
+  isActive       Boolean        @default(true)
+  articles       Article[]
+  legacyId       Int?           @unique // categories.id của site cũ
+
+  @@index([section, sortOrder])
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Article {
+  id          Int            @id @default(autoincrement())
+  slug        String         @unique // = posts.title_slug (đã kiểm tra không trùng)
+  title       String
+  summary     String?        @db.Text // rỗng -> tự sinh từ contentText khi import
+  /// HTML đã sanitize + rewrite URL ảnh về /uploads/legacy/...
+  contentHtml String?        @db.Text
+  /// Bản text thuần của contentHtml, dùng cho tìm kiếm và sinh summary
+  contentText String?        @db.Text
+  section     ContentSection
+  categoryId  Int?
+  category    Category?      @relation(fields: [categoryId], references: [id])
+
+  coverUrl       String? // ảnh lớn (posts.image_default)
+  thumbUrl       String? // ảnh nhỏ danh sách (posts.image_mid)
+  coverAlt       String?
+  videoUrl       String?
+  embedHtml      String? @db.Text // posts.video_embed_code
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentSize String?
+
+  author          String?
+  publishedAt     DateTime? // = posts.created_at
+  sourceUpdatedAt DateTime? // = posts.updated_at
+  dateText        String? // ghi đè chuỗi ngày hiển thị (tùy chọn)
+  views           Int       @default(0)
+
+  isPublished   Boolean @default(true)
+  isFeatured    Boolean @default(false)
+  isRecommended Boolean @default(false)
+  isBreaking    Boolean @default(false)
+  isSlider      Boolean @default(false)
+  sliderOrder   Int     @default(0)
+
+  metaTitle       String?
+  metaDescription String? @db.Text
+  metaKeywords    String?
+  ogImage         String?
+  canonicalUrl    String? // = posts.optional_url
+
+  tags        Tag[]        @relation("ArticleTags")
+  seriesNodes SeriesNode[]
+
+  legacyId   Int?     @unique // posts.id
+  legacyPath String? // "/<title_slug>" — đường dẫn gốc trên site cũ
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([section, isPublished, publishedAt])
+  @@index([categoryId])
+  @@index([isSlider, sliderOrder])
+  @@index([publishedAt])
+  @@map("articles")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  slug      String    @unique
+  name      String
+  articles  Article[] @relation("ArticleTags")
+  createdAt DateTime  @default(now())
+
+  @@map("tags")
+}
+
+// Mục lục giáo trình "DỰ TOÁN BNSC": cây Phần I..V -> từng bài học có thứ tự.
+// Node không gắn articleId là mục đang để trống (placeholder) ở site cũ.
+model SeriesNode {
+  id        Int          @id @default(autoincrement())
+  title     String
+  slug      String
+  parentId  Int?
+  parent    SeriesNode?  @relation("SeriesTree", fields: [parentId], references: [id])
+  children  SeriesNode[] @relation("SeriesTree")
+  articleId Int?
+  article   Article?     @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  sortOrder Int          @default(0)
+  isActive  Boolean      @default(true)
+  legacyId  Int?         @unique
+
+  @@index([parentId, sortOrder])
+  @@index([articleId])
+  @@map("series_nodes")
+}
+
+// Bảng 301: giữ thứ hạng SEO của các URL gốc cũ dạng bacnam.com.vn/<slug>.
+model Redirect {
+  id        Int      @id @default(autoincrement())
+  from      String   @unique // "/vinh-long-quyet-dinh-325-va-327qd-sxd..."
+  to        String // "/tin-tuc/vinh-long-quyet-dinh-325-va-327qd-sxd..."
+  status    Int      @default(301)
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("redirects")
+}

@@ -7,6 +7,9 @@ import { GoogleGenAI } from "@google/genai";
 import { createAuthRouter } from "./server/auth";
 import { createPublicRouter } from "./server/routes.public";
 import { createAdminRouter } from "./server/routes.admin";
+import { createUploadRouter, UPLOAD_DIR } from "./server/routes.upload";
+import { createContentRouter } from "./server/routes.content";
+import { createRedirectMiddleware, createSitemapHandler } from "./server/routes.seo";
 
 dotenv.config();
 
@@ -112,9 +115,32 @@ Lời khuyên cho bạn:
     }
   });
 
+  // Phục vụ tệp upload (ảnh/tài liệu) ở cả dev lẫn production.
+  // Ảnh mirror từ site cũ nằm ở /uploads/legacy/** — tên tệp có hash nên nội
+  // dung không bao giờ đổi theo URL, cache được vĩnh viễn.
+  app.use(
+    "/uploads",
+    express.static(UPLOAD_DIR, {
+      maxAge: "30d",
+      setHeaders: (res, filePath) => {
+        if (filePath.includes(`${path.sep}legacy${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    }),
+  );
+
+  // sitemap.xml sinh động từ CSDL (đặt trước express.static để ưu tiên bản động).
+  app.get("/sitemap.xml", createSitemapHandler());
+
+  // 301 các URL gốc của website cũ (bacnam.com.vn/<slug>) sang đường dẫn mới.
+  app.use(createRedirectMiddleware());
+
   // API: xác thực admin, dữ liệu công khai, và quản trị (CRUD)
   app.use("/api/admin/auth", createAuthRouter());
+  app.use("/api/public", createContentRouter());
   app.use("/api/public", createPublicRouter());
+  app.use("/api/admin/upload", createUploadRouter());
   app.use("/api/admin", createAdminRouter());
 
   // Bắt lỗi API (vd mất kết nối DB) -> trả JSON 500, không làm sập tiến trình.

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Settings, Play, ShieldAlert, FileCheck, HelpCircle, BookOpen, User, Calendar, Eye, Search, ChevronRight } from 'lucide-react';
 import { useApi } from '../lib/api';
+import { useCategories } from '../lib/content';
 import { libraryFallback, mapLibrary, type ApiLibrary } from '../lib/publicData';
 
 type LibraryItem = ApiLibrary;
@@ -13,15 +14,16 @@ export default function EstimationLibrary() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [visibleCount, setVisibleCount] = useState<number>(8);
 
-  const tabs = [
-    { name: 'Tất cả', emoji: '📚' },
-    { name: 'Download', emoji: '⬇' },
-    { name: 'Cài đặt', emoji: '⚙' },
-    { name: 'Sử dụng', emoji: '▶' },
-    { name: 'Thẩm định', emoji: '🔍' },
-    { name: 'Tình huống khác', emoji: '💡' },
-    { name: 'Lập Dự toán - Dự thầu', emoji: '📋' }
-  ];
+  // Tab lấy từ CSDL; emoji lưu ngay trên bản ghi danh mục (cột `emoji`).
+  const { leaves: libraryCategories } = useCategories('LIBRARY');
+
+  const tabs = useMemo(
+    () => [
+      { name: 'Tất cả', emoji: '📚' },
+      ...libraryCategories.map((c) => ({ name: c.name, emoji: c.emoji ?? '📄' })),
+    ],
+    [libraryCategories],
+  );
 
   // Map category to color scheme specifications
   const getCategoryClass = (category: string) => {

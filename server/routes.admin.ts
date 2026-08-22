@@ -6,7 +6,7 @@
 import express, { type Router } from 'express';
 import { prisma } from './db';
 import { requireAuth } from './auth';
-import { resources, stripSystemFields } from './resources';
+import { resources, stripSystemFields, buildAdminWhere } from './resources';
 
 function getResource(name: string) {
   return resources[name];
@@ -21,35 +21,54 @@ export function createAdminRouter(): Router {
   // Thống kê tổng quan cho dashboard.
   router.get('/stats', async (_req, res) => {
     try {
-      const [news, library, products, leads, newLeads, customers, courses] = await Promise.all([
-        prisma.newsArticle.count(),
-        prisma.libraryArticle.count(),
-        prisma.product.count(),
-        prisma.lead.count(),
-        prisma.lead.count({ where: { status: 'NEW' } }),
-        prisma.customer.count(),
-        prisma.course.count(),
-      ]);
-      res.json({ news, library, products, leads, newLeads, customers, courses });
+      const [news, library, consulting, training, drafts, tags, products, leads, newLeads, customers, courses] =
+        await Promise.all([
+          prisma.article.count({ where: { section: 'NEWS' } }),
+          prisma.article.count({ where: { section: 'LIBRARY' } }),
+          prisma.article.count({ where: { section: 'CONSULTING' } }),
+          prisma.article.count({ where: { section: 'TRAINING' } }),
+          prisma.article.count({ where: { isPublished: false } }),
+          prisma.tag.count(),
+          prisma.product.count(),
+          prisma.lead.count(),
+          prisma.lead.count({ where: { status: 'NEW' } }),
+          prisma.customer.count(),
+          prisma.course.count(),
+        ]);
+      res.json({
+        news, library, consulting, training, drafts, tags,
+        articles: news + library + consulting + training,
+        products, leads, newLeads, customers, courses,
+      });
     } catch (e) {
       console.error('stats error', e);
       res.status(500).json({ error: 'Lỗi lấy thống kê.' });
     }
   });
 
-  // Danh sách (có phân trang tùy chọn ?take=&skip=).
+  // Danh sách: phân trang (?take=&skip=), tìm kiếm (?q=) và lọc (?section=...).
+  // Bắt buộc phân trang mặc định — bảng articles có 555 bản ghi.
   router.get('/resources/:resource', async (req, res) => {
     const cfg = getResource(req.params.resource);
     if (!cfg) return res.status(404).json({ error: 'Resource không tồn tại.' });
     try {
-      const take = req.query.take ? Math.min(Number(req.query.take), 200) : undefined;
-      const skip = req.query.skip ? Number(req.query.skip) : undefined;
+      const take = Math.min(Number(req.query.take) || 25, 200);
+      const skip = Math.max(Number(req.query.skip) || 0, 0);
+      const where = buildAdminWhere(cfg, req.query as Record<string, unknown>);
+
       const [rows, total] = await Promise.all([
-        cfg.delegate().findMany({ orderBy: cfg.orderBy, include: cfg.include, take, skip }),
-        cfg.delegate().count(),
+        cfg.delegate().findMany({
+          where,
+          orderBy: cfg.orderBy,
+          include: cfg.include,
+          ...(cfg.listOmit?.length ? { omit: Object.fromEntries(cfg.listOmit.map((f) => [f, true])) } : {}),
+          take,
+          skip,
+        }),
+        cfg.delegate().count({ where }),
       ]);
       const data = cfg.afterRead ? rows.map(cfg.afterRead) : rows;
-      res.json({ data, total });
+      res.json({ data, total, take, skip });
     } catch (e) {
       console.error('list error', e);
       res.status(500).json({ error: 'Lỗi lấy danh sách.' });
