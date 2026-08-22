@@ -543,7 +543,21 @@ EXPORT=/home/deploy_demobnsc/app/legacy-export   # thư mục JSON export, chép
    Nếu chuỗi đó vốn là *giá trị* chứ không phải tên biến thì thay bằng
    `echo 'JWT_SECRET=<chuỗi-ngẫu-nhiên-dài>' >> $ENVF` và xoá dòng cũ.
 
-2. **Baseline CSDL — chạy MỘT LẦN.** CSDL `demobnsc_db` được dựng bằng `db.sql`
+2. **Tên miền và lập chỉ mục.** Caddy đang phục vụ bản này ở
+   `demobnsc.bacnam.com.vn`, còn `bacnam.com.vn` vẫn chạy trên VPS cũ. Vì vậy:
+   - `APP_URL` phải là **tên miền đang thật sự phục vụ**, nếu không sitemap và thẻ
+     canonical trỏ sang site khác.
+   - `SITE_INDEXABLE` để **false** (mặc định) chừng nào chưa cắt tên miền. Bật lên
+     là Google đánh chỉ mục 555 trang trùng nội dung với site thật.
+   ```bash
+   sed -i 's#^APP_URL=.*#APP_URL=https://demobnsc.bacnam.com.vn#' $ENVF
+   grep -q '^SITE_INDEXABLE=' $ENVF || echo 'SITE_INDEXABLE=false' >> $ENVF
+   ```
+   Lúc cắt sang tên miền chính thức: đổi `APP_URL=https://bacnam.com.vn`, đặt
+   `SITE_INDEXABLE=true`, thêm block Caddy cho `bacnam.com.vn`, rồi
+   `docker restart bnsc_demobnsc_app`.
+
+3. **Baseline CSDL — chạy MỘT LẦN.** CSDL `demobnsc_db` được dựng bằng `db.sql`
    qua pgAdmin nên không có bảng `_prisma_migrations`; `prisma migrate deploy`
    sẽ dừng với **P3005 "The database schema is not empty"**. Đánh dấu migration
    nền là đã áp (chỉ ghi nhận, không chạy SQL nào):

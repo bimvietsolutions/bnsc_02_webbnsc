@@ -9,7 +9,12 @@ import { createPublicRouter } from "./server/routes.public";
 import { createAdminRouter } from "./server/routes.admin";
 import { createUploadRouter, UPLOAD_DIR } from "./server/routes.upload";
 import { createContentRouter } from "./server/routes.content";
-import { createRedirectMiddleware, createSitemapHandler } from "./server/routes.seo";
+import {
+  createRedirectMiddleware,
+  createSitemapHandler,
+  createRobotsHandler,
+  createNoIndexMiddleware,
+} from "./server/routes.seo";
 import { prisma } from "./server/db";
 
 dotenv.config();
@@ -147,6 +152,10 @@ Lời khuyên cho bạn:
 
   // sitemap.xml sinh động từ CSDL (đặt trước express.static để ưu tiên bản động).
   app.get("/sitemap.xml", createSitemapHandler());
+
+  // robots.txt sinh động + chặn lập chỉ mục khi SITE_INDEXABLE chưa bật.
+  app.get("/robots.txt", createRobotsHandler());
+  app.use(createNoIndexMiddleware());
 
   // 301 các URL gốc của website cũ (bacnam.com.vn/<slug>) sang đường dẫn mới.
   app.use(createRedirectMiddleware());
