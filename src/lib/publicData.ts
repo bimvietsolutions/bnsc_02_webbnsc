@@ -4,8 +4,6 @@
  * mà các component đang dùng. Khi API phản hồi, dữ liệu DB thay cho fallback.
  */
 import { products as staticProducts, customersList, navLinks, heroStats } from '../data';
-import { newsArticles } from '../data/news';
-import { libraryArticles } from '../data/library';
 
 // --- shapes (khớp API) -------------------------------------------------------
 export interface ApiProduct {
@@ -76,6 +74,12 @@ export interface ApiRemoteTool {
   realUrl?: string | null;
   badge?: string | null;
 }
+export interface ApiHeroSlide {
+  imageUrl: string;
+  caption: string;
+  /** Đích khi bấm vào slide; null nếu slide chỉ là ảnh minh họa. */
+  linkUrl?: string | null;
+}
 export interface ApiNavLink {
   name: string;
   href: string;
@@ -127,35 +131,18 @@ export const mapProducts = (rows: any[]): ApiProduct[] =>
     iconName: r.iconName,
   }));
 
-// --- fallbacks (từ dữ liệu tĩnh hiện có) -------------------------------------
+// --- fallbacks (chỉ dùng khi API lỗi) ----------------------------------------
+// Tin tức & thư viện KHÔNG có fallback tĩnh: nội dung thật nằm ở CSDL (bảng
+// articles). Trả mảng rỗng để component hiện trạng thái trống thay vì hiển thị
+// bài giả với slug đã chết.
+export const newsFallback: ApiNews[] = [];
+export const libraryFallback: ApiLibrary[] = [];
+
 export const productsFallback: ApiProduct[] = mapProducts(staticProducts as any[]);
 
-export const newsFallback: ApiNews[] = newsArticles.map((a) => ({
-  id: a.id,
-  slug: a.slug,
-  title: a.title,
-  excerpt: a.excerpt,
-  contentBody: a.contentBody,
-  imageUrl: a.imageUrl,
-  category: a.category,
-  date: a.date,
-  views: a.views,
-}));
 
-export const libraryFallback: ApiLibrary[] = libraryArticles.map((a) => ({
-  id: a.id,
-  slug: a.slug,
-  title: a.title,
-  summary: a.summary,
-  content: null,
-  imageUrl: a.imageUrl,
-  author: a.author,
-  category: a.category,
-  date: a.date,
-  views: a.views,
-}));
 
-export const heroFallback = {
+export const heroFallback: { slides: ApiHeroSlide[]; stats: { value: string; label: string }[] } = {
   slides: [
     { imageUrl: '/uploads/hero/meeting_gialai.png', caption: 'SXD GIA LAI: Công bố Đơn giá NC & Giá CM năm 2025 do BNSC tư vấn thực hiện' },
     { imageUrl: '/uploads/hero/training_lamdong.png', caption: 'SXD LÂM ĐỒNG: Đào tạo & tập huấn nghiệp vụ phần mềm Dự toán BNSC mới nhất' },

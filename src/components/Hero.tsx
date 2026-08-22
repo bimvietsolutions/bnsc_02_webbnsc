@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Play, Compass, Settings, Eye, MessageSquare, Calendar, User } from 'lucide-react';
 import { useUiActions } from '../context/UiActions';
-import { SAMPLE_ARTICLE_SLUG } from '../data/library';
 import { scrollToId } from '../utils/scroll';
 import { useApi } from '../lib/api';
 import { heroFallback } from '../lib/publicData';
@@ -12,7 +11,11 @@ export default function Hero() {
   const { openDownload } = useUiActions();
   const onDownloadClick = () => openDownload();
   const onVideoClick = () => scrollToId('tu-van');
-  const onArticleClick = () => navigate(`/thu-vien/${SAMPLE_ARTICLE_SLUG}`);
+  // Slide lấy từ API kèm linkUrl trỏ đúng bài viết; slide thủ công không có
+  // link thì không bấm được (trước đây bấm vào là rơi vào slug tĩnh đã chết).
+  const onSlideClick = (linkUrl?: string | null) => {
+    if (linkUrl) navigate(linkUrl);
+  };
 
   // Hero (slide + số liệu) lấy từ API, fallback dữ liệu tĩnh.
   const { data: hero } = useApi('/api/public/hero', heroFallback);
@@ -60,8 +63,10 @@ export default function Hero() {
               {slides.map((slide, idx) => (
                 <div
                   key={idx}
-                  onClick={onArticleClick}
-                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
+                  onClick={() => onSlideClick(slide.linkUrl)}
+                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                    slide.linkUrl ? 'cursor-pointer' : ''
+                  } ${
                     idx === activeSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
                   }`}
                 >

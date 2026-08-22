@@ -1,13 +1,18 @@
-import { NewsItem, ProductItem, NavLinkItem, CustomerItem } from './types';
+import { ProductItem, NavLinkItem, CustomerItem } from './types';
 
+/**
+ * Menu chính. Bốn mảng nội dung nay có trang riêng (dữ liệu thật từ CSDL) nên
+ * trỏ thẳng vào đường dẫn thay vì neo (#) trên trang chủ; các mục còn lại vẫn
+ * là neo tới section của trang chủ.
+ */
 export const navLinks: NavLinkItem[] = [
   { name: 'Trang chủ', href: '#trang-chu' },
   { name: 'Giới thiệu', href: '#gioi-thieu' },
-  { name: 'Tin tức', href: '#tin-tuc' },
-  { name: 'Thư viện', href: '#thuvien-tinhhuong' },
+  { name: 'Tin tức', href: '/tin-tuc' },
+  { name: 'Thư viện', href: '/thu-vien' },
   { name: 'Phần mềm', href: '#du-toan' },
-  { name: 'Tư vấn', href: '#tu-van' },
-  { name: 'Đào tạo', href: '#dao-tao' },
+  { name: 'Tư vấn', href: '/tu-van' },
+  { name: 'Đào tạo', href: '/dao-tao' },
   { name: 'Liên hệ', href: '#lien-he' }
 ];
 
@@ -59,72 +64,6 @@ export const products: ProductItem[] = [
     ],
     ctaText: 'Xem lịch chiêu sinh',
     iconName: 'GraduationCap'
-  }
-];
-
-export const newsData: NewsItem[] = [
-  {
-    id: 1,
-    title: 'Vĩnh Long: QĐ 325 và 327/QĐ-SXD Công bố đơn giá NC & MTC năm 2026',
-    date: '18/05/2026',
-    views: 362,
-    category: 'Văn bản QPPL',
-    excerpt: 'Sở Xây dựng tỉnh Vĩnh Long ban hành các Quyết định về Đơn giá nhân công xây dựng và Giá ca máy thiết bị thi công năm 2026 theo hướng dẫn Thông tư 11/2021/TT-BXD, hỗ trợ đồng bộ dữ liệu vào phần mềm BNSC...',
-    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 2,
-    title: 'An Giang: QĐ 2116/QĐ-UBND Công bố đơn giá NC & MTC năm 2026',
-    date: '06/05/2026',
-    views: 224,
-    category: 'Văn bản QPPL',
-    excerpt: 'Ủy ban nhân dân tỉnh An Giang công bố bộ đơn giá nhân công mới nhất và bảng giá ca máy thi công làm cơ sở quản lý chi phí đầu tư xây dựng công trình trên địa bàn tỉnh An Giang chính xác hơn...',
-    imageUrl: 'https://images.unsplash.com/photo-1590674899484-d564fa7f174e?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 3,
-    title: 'Cần Thơ: QĐ 595/QĐ-SXD Công bố đơn giá NC & MTC năm 2026',
-    date: '05/05/2026',
-    views: 641,
-    category: 'Văn bản QPPL',
-    excerpt: 'Sở Xây dựng TP. Cần Thơ chính thức ban hành bảng công bố giá nhân công và máy thi công đầu năm 2026 bám sát biến động thị trường lao động xây dựng thực tế và các quy định của Chính phủ...',
-    imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 4,
-    title: 'BỘ XÂY DỰNG: TT 04/2026/TT-BXD Định mức bảo dưỡng KCHT đường sắt',
-    date: '30/01/2026',
-    views: 726,
-    category: 'Chuyên ngành',
-    excerpt: 'Thông tư số 04/2026/TT-BXD của Bộ Xây dựng quy định về định mức dự toán bảo dưỡng kỹ thuật, sửa chữa định kỳ kết cấu hạ tầng đường sắt quốc gia, bắt đầu có hiệu lực thi hành ngay từ quý I năm 2026...',
-    imageUrl: 'https://images.unsplash.com/photo-1517089539094-de823e311a84?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 5,
-    title: 'Lễ ký hợp tác với ĐH GTVT tại TP.HCM',
-    date: '10/05/2022',
-    views: 3900,
-    category: 'Nội bộ',
-    excerpt: 'Bắc Nam Software ký kết biên bản ghi nhớ toàn diện cùng Trường Đại học Giao thông vận tải Phân hiệu tại TP.HCM nhằm tài trợ gói phần mềm bản quyền Dự toán BNSC và hỗ trợ giáo trình đào tạo giảng dạy SV...',
-    imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 6,
-    title: 'Khuyến mãi đặc biệt: Ưu đãi 15% kỷ niệm 15 năm thành lập Bắc Nam Software',
-    date: '12/04/2026',
-    views: 850,
-    category: 'Khuyến mãi',
-    excerpt: 'Nhân dịp kỷ niệm 15 năm hình thành phát triển, Bắc Nam tri ân quý khách hàng xây dựng chương trình hỗ trợ tặng kèm bản vẽ thiết kế và giảm ngay 15% khi mua mới hoặc nâng cấp khóa cứng BNSC.',
-    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 7,
-    title: 'Tặng 100 license học tập miễn phí cho Sinh viên ngành Kinh tế Xây dựng',
-    date: '20/03/2026',
-    views: 1205,
-    category: 'Khuyến mãi',
-    excerpt: 'Hỗ trợ hành trang vào nghề dành cho các bạn sinh viên trực chuẩn bị thực tập thăng tiến, Bắc Nam dành tặng 100 license bản quyền phần mềm hỗ trợ học thuật đẩy đủ tính năng sử dụng trong 6 tháng.',
-    imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&q=80'
   }
 ];
 

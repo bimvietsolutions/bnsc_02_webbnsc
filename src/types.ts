@@ -3,7 +3,12 @@
  * Type definitions for BNSC (Bắc Nam Software) home screen
  */
 
-export type CategoryType = 'Văn bản QPPL' | 'Nội bộ' | 'Chuyên ngành' | 'Khuyến mãi';
+/**
+ * Tên danh mục. Trước đây là union 4 giá trị cứng nên mỗi lần biên tập viên
+ * thêm danh mục trong trang quản trị là mã nguồn không biên dịch được. Danh mục
+ * nay do CSDL quyết định (bảng `categories`), nên đây chỉ còn là chuỗi.
+ */
+export type CategoryType = string;
 
 export interface NewsItem {
   id: number;

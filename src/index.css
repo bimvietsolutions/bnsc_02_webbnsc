@@ -58,3 +58,151 @@ body {
 .pulse-dot {
   animation: pulse-dot 1.8s infinite ease-in-out;
 }
+
+/* ===========================================================================
+   Nội dung bài viết (HTML chuyển từ website cũ bacnam.com.vn)
+   Kho bài cũ có 596 bảng, 3.281 ảnh và 57 iframe với style inline tuỳ hứng —
+   các quy tắc dưới đây chuẩn hoá lại để đọc tốt trên cả di động lẫn desktop.
+   =========================================================================== */
+.article-body {
+  color: #1a2332;
+  font-size: 15px;
+  line-height: 1.75;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .article-body { font-size: 16px; }
+}
+
+.article-body p { margin: 0 0 1rem; }
+.article-body p:last-child { margin-bottom: 0; }
+
+.article-body h2,
+.article-body h3,
+.article-body h4 {
+  color: #0b2545;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 1.75rem 0 0.75rem;
+  scroll-margin-top: 90px;
+}
+.article-body h2 { font-size: 1.25rem; }
+.article-body h3 { font-size: 1.1rem; }
+.article-body h4 { font-size: 1rem; }
+
+.article-body a {
+  color: #1b5fa8;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.article-body a:hover { color: #0b2545; }
+
+.article-body ul,
+.article-body ol { margin: 0 0 1rem; padding-left: 1.35rem; }
+.article-body ul { list-style: disc; }
+.article-body ol { list-style: decimal; }
+.article-body li { margin-bottom: 0.4rem; }
+
+.article-body blockquote {
+  margin: 1.25rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #f5a623;
+  background: #f7f9fc;
+  border-radius: 0 0.75rem 0.75rem 0;
+  font-style: italic;
+  color: #475569;
+}
+
+/* Ảnh: luôn co theo khung, căn giữa, bỏ mọi width cứng của dữ liệu cũ */
+.article-body img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: 1.25rem auto;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+/* Bảng: cuộn ngang trong khung riêng, không bao giờ đẩy tràn trang */
+.article-table-scroll {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+.article-body table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.article-body th,
+.article-body td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+.article-body th { background: #f1f5f9; font-weight: 700; color: #0b2545; }
+.article-body tr:nth-child(even) td { background: #fafbfc; }
+
+/* Video nhúng (YouTube) giữ tỉ lệ 16:9 */
+.article-embed {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 1.5rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #0f172a;
+}
+.article-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Vô hiệu hoá màu nền/chữ inline khó đọc còn sót từ trình soạn thảo cũ */
+.article-body [style*="background-color: #ffffff"],
+.article-body [style*="background-color: rgb(255, 255, 255)"] {
+  background-color: transparent !important;
+}
+
+.article-body hr {
+  margin: 1.75rem 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.article-body--plain p { margin: 0 0 0.9rem; }
+
+/* Vùng soạn thảo trong trang quản trị (TipTap) — dùng lại typography bài viết */
+.admin-editor {
+  min-height: 340px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
+}
+.admin-editor:focus { outline: none; }
+.admin-editor p.is-editor-empty:first-child::before {
+  content: 'Nhập nội dung bài viết…';
+  color: #94a3b8;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+/* Ô bảng khi soạn thảo cần thấy rõ đường lưới và ô đang chọn */
+.admin-editor table { min-width: 100%; }
+.admin-editor .selectedCell { background: rgba(27, 95, 168, 0.12); }
+.admin-editor .ProseMirror-selectednode {
+  outline: 2px solid #1b5fa8;
+  border-radius: 0.5rem;
+}
