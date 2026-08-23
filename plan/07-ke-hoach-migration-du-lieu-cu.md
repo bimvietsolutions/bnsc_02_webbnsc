@@ -679,3 +679,37 @@ npx prisma migrate diff \
 Kiểm chứng sau dọn dẹp: `tsc --noEmit` 0 lỗi · `npm run build` 20s · `npm run db:seed`
 chạy sạch · smoke-test bản production (cổng 3100): sitemap 734 URL, `/12-cap-nhat-phien-ban-moi`
 → 301, trang chủ render đủ section với dữ liệu thật (bài mới nhất "Nghị định 206/2026/NĐ-CP").
+
+### 10.4 Sự cố đã gặp khi triển khai (2026-08-23)
+
+**`DATABASE_URL` sai mật khẩu suốt 6 tuần mà không ai biết.** `demobnsc.bacnam.com.vn`
+chưa bao giờ đọc được CSDL: mọi truy vấn trả 500, frontend lặng lẽ dùng dữ liệu tĩnh
+dự phòng nên trang web trông vẫn bình thường (13 tin tức hiển thị là dữ liệu giả
+trong bundle, không phải từ CSDL). Healthcheck `/health/live` không đụng CSDL nên
+Docker vẫn báo `healthy`.
+
+Đây chính là lý do đợt này thêm `/health/ready` (có `count()` trên bảng `articles`)
+và dùng nó làm cổng kiểm tra khi deploy, thay cho `/health/live`.
+
+Vài điểm khiến việc chẩn đoán dễ đi sai đường:
+
+- Image Postgres chính thức đặt `trust` cho **cả** socket lẫn `127.0.0.1`. Thử mật
+  khẩu bằng `docker exec postgres_x psql -h 127.0.0.1` luôn thành công kể cả khi
+  mật khẩu sai. Muốn kiểm thật phải nối từ container khác qua mạng Docker:
+  ```bash
+  docker run --rm --network pgnet -e PGPASSWORD="$P" postgres:15 \
+    psql -h postgres_demobnsc -U demobnsc_user -d demobnsc_db -Atc 'select 1'
+  ```
+- `POSTGRES_PASSWORD` chỉ có tác dụng lúc khởi tạo CSDL lần đầu; sửa biến này về
+  sau không đổi mật khẩu thật. Ở đây nó lại đúng, còn `.env` mới là chỗ sai.
+- Sửa `.env` bằng `mv` sẽ đổi chủ sở hữu tệp sang `root` và deploy (chạy bằng user
+  `deploy_demobnsc`) không đọc được nữa. Ghi đè bằng `cat file > $ENVF` để giữ
+  nguyên inode, quyền `600` và chủ sở hữu.
+- `docker restart` **không** đọc lại `--env-file`. Sửa `.env` xong phải tạo lại
+  container (deploy) thì thay đổi mới có hiệu lực.
+
+**Chưa có tài khoản quản trị** (`admin_users` rỗng). Tạo sau khi deploy xong:
+```bash
+docker run --rm --network pgnet --env-file $ENVF $IMAGE \
+  npm run db:create-admin -- admin@bacnam.com.vn "MatKhauManh" "Quản trị viên"
+```
