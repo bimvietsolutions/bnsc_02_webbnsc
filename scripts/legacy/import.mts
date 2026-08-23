@@ -12,6 +12,7 @@
  *   npm run legacy:import -- --only-published
  */
 import fs from 'node:fs';
+import path from 'node:path';
 import { PrismaClient, type ContentSection } from '@prisma/client';
 import { loadExport, type LegacyCategory, type LegacyPost } from './load-export.mts';
 import { IMPORT_REPORT, MEDIA_MANIFEST } from './paths.mts';
@@ -337,6 +338,7 @@ async function main() {
   console.log(`[import] redirect: ${report.redirects}`);
 
   // -------------------------------------------------------------------- report
+  fs.mkdirSync(path.dirname(IMPORT_REPORT), { recursive: true });
   fs.writeFileSync(IMPORT_REPORT, JSON.stringify(report, null, 2), 'utf8');
   console.log('\n=============================================');
   console.log(`Danh mục   : ${report.categories}`);

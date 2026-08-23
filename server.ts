@@ -142,6 +142,11 @@ Lời khuyên cho bạn:
     "/uploads",
     express.static(UPLOAD_DIR, {
       maxAge: "30d",
+      // Chặn mọi thứ trong thư mục dấu chấm — cụ thể là public/uploads/.legacy/
+      // chứa manifest ETL (liệt kê toàn bộ đường dẫn ảnh) và báo cáo import.
+      // Mặc định của express.static là VẪN phục vụ chúng, đã kiểm chứng bằng
+      // curl: trả về nguyên 2,9 MB manifest.
+      dotfiles: "ignore",
       setHeaders: (res, filePath) => {
         if (filePath.includes(`${path.sep}legacy${path.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");

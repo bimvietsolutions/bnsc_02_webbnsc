@@ -19,5 +19,7 @@ public/uploads/*
 .claude/settings.local.json
 
 # Sản phẩm sinh ra bởi ETL dữ liệu cũ (chạy lại bằng npm run legacy:mirror/import)
+# ETL nay ghi vào public/uploads/.legacy/ (đã bị public/uploads/* bỏ qua).
+# Hai dòng dưới giữ lại phòng khi còn tệp cũ ở vị trí trước đây.
 scripts/legacy/media-manifest.json
 scripts/legacy/import-report.json

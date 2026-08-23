@@ -675,3 +675,26 @@ npx prisma migrate diff \
 Kiểm chứng sau dọn dẹp: `tsc --noEmit` 0 lỗi · `npm run build` 20s · `npm run db:seed`
 chạy sạch · smoke-test bản production (cổng 3100): sitemap 734 URL, `/12-cap-nhat-phien-ban-moi`
 → 301, trang chủ render đủ section với dữ liệu thật (bài mới nhất "Nghị định 206/2026/NĐ-CP").
+
+**Manifest ETL không sống sót giữa hai container (2026-08-23).** `legacy:mirror` tải
+xong 12.104/12.104 ảnh (2.834 MB) rồi chết ở dòng cuối:
+`EACCES: permission denied, open '/app/scripts/legacy/media-manifest.json'`.
+
+Hai lỗi chồng nhau:
+
+1. Thư mục mã nguồn trong image thuộc `root`, container chạy bằng uid sở hữu thư mục
+   uploads (trên VPS này là 1005) nên không ghi được.
+2. Nghiêm trọng hơn: kể cả ghi được thì tệp nằm ở **lớp ghi của container**, mất khi
+   container bị xoá. `legacy:import` chạy ở container khác nên sẽ không bao giờ thấy
+   manifest — và khi thiếu manifest, script chỉ *cảnh báo* rồi giữ nguyên URL tuyệt
+   đối về `bacnam.com.vn`, tức 2,83 GB ảnh vừa tải về thành vô dụng. Bộ script vốn
+   giả định mirror và import dùng chung một hệ tệp, đúng trên máy dev, sai khi chạy
+   bằng container.
+
+Sửa: `MEDIA_MANIFEST` và `IMPORT_REPORT` chuyển vào `public/uploads/.legacy/` — thư
+mục duy nhất được gắn volume, nên bền vững và dùng chung giữa các container. Ghi đè
+được bằng `LEGACY_META_DIR`.
+
+Kèm theo phát hiện: `express.static` **vẫn phục vụ** thư mục dấu chấm (kiểm bằng curl,
+nó trả nguyên 2,9 MB manifest liệt kê toàn bộ đường dẫn ảnh). Phải khai báo tường minh
+`dotfiles: "ignore"`.

@@ -18,11 +18,28 @@ export const LEGACY_MEDIA_DIR = path.join(PROJECT_ROOT, 'public', 'uploads', 'le
 /** Tiền tố URL công khai tương ứng với LEGACY_MEDIA_DIR. */
 export const LEGACY_MEDIA_URL_PREFIX = '/uploads/legacy';
 
+/**
+ * Nơi lưu tệp trung gian của ETL (manifest, báo cáo).
+ *
+ * Phải nằm trong public/uploads vì đó là thư mục DUY NHẤT được gắn volume khi
+ * chạy bằng container: mirror và import là hai container khác nhau, nếu để tệp
+ * trong mã nguồn thì nó nằm ở lớp ghi của container và biến mất khi container
+ * bị xoá — import sẽ không bao giờ thấy manifest, và mọi ảnh giữ nguyên URL
+ * tuyệt đối về site cũ. Thư mục mã nguồn trong image cũng thuộc root nên uid
+ * chạy container không ghi được (EACCES).
+ *
+ * Đặt trong thư mục ẩn ".legacy" để express.static không phục vụ ra ngoài
+ * (mặc định dotfiles: 'ignore' -> trả 404): manifest liệt kê toàn bộ đường dẫn
+ * ảnh, không có lý do gì để công khai.
+ */
+export const LEGACY_META_DIR =
+  process.env.LEGACY_META_DIR?.trim() || path.join(PROJECT_ROOT, 'public', 'uploads', '.legacy');
+
 /** Manifest ánh xạ URL cũ -> đường dẫn mới, do mirror-media sinh ra, ETL đọc lại. */
-export const MEDIA_MANIFEST = path.join(PROJECT_ROOT, 'scripts', 'legacy', 'media-manifest.json');
+export const MEDIA_MANIFEST = path.join(LEGACY_META_DIR, 'media-manifest.json');
 
 /** Báo cáo đối soát sau khi import. */
-export const IMPORT_REPORT = path.join(PROJECT_ROOT, 'scripts', 'legacy', 'import-report.json');
+export const IMPORT_REPORT = path.join(LEGACY_META_DIR, 'import-report.json');
 
 /** Host của website cũ — dùng để nhận diện URL nội bộ cần rewrite. */
 export const LEGACY_HOST = 'bacnam.com.vn';
