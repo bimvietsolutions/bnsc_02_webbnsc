@@ -88,10 +88,9 @@ export default function TechnicalSupportPage() {
             </button>
             <div className="flex items-center gap-3">
               <img 
-                src="https://bacnam.com.vn/uploads/logo/logo_60b98e41a181e3.png" 
+                src="/brand/logo.png" 
                 alt="Logo" 
                 className="w-9 h-9 object-contain"
-                referrerPolicy="no-referrer"
               />
               <div className="hidden sm:block text-left">
                 <h1 className="font-extrabold text-[15px] tracking-wider text-white uppercase">BẮC NAM SOFTWARE</h1>
