@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AdminAuthProvider, useAdminAuth } from './AuthContext';
-import AdminLogin from './AdminLogin';
 import AdminLayout from './AdminLayout';
 import Dashboard from './Dashboard';
 import ResourceList from './ResourceList';
@@ -20,7 +19,7 @@ function RequireAdmin({ children }: { children: ReactNode }) {
       </div>
     );
   }
-  if (!user) return <Navigate to="/admin/login" replace />;
+  if (!user) return <Navigate to="/dang-nhap?next=/admin" replace />;
   return <>{children}</>;
 }
 
@@ -28,7 +27,8 @@ export default function AdminApp() {
   return (
     <AdminAuthProvider>
       <Routes>
-        <Route path="login" element={<AdminLogin />} />
+        {/* Trang đăng nhập duy nhất nằm ở /dang-nhap; giữ route này cho link cũ. */}
+        <Route path="login" element={<Navigate to="/dang-nhap?next=/admin" replace />} />
         <Route
           element={
             <RequireAdmin>
