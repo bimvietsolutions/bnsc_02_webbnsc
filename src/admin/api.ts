@@ -56,21 +56,14 @@ export async function uploadFile(file: File): Promise<{ url: string }> {
   return body;
 }
 
-// Auth
-export const authLogin = (email: string, password: string) =>
-  apiSend('/api/admin/auth/login', 'POST', { email, password });
-export const authLogout = () => apiSend('/api/admin/auth/logout', 'POST');
-export const authMe = () => apiGet<{ user: AdminUser }>('/api/admin/auth/me');
-/** Đổi ID token của Google lấy phiên đăng nhập admin. */
-export const authGoogle = (credential: string) =>
-  apiSend<{ user: AdminUser }>('/api/admin/auth/google', 'POST', { credential });
-/** Lấy cấu hình đăng nhập (có bật Google hay không). */
-export const authConfig = () =>
-  apiGet<{ googleClientId: string | null }>('/api/admin/auth/config');
+// Auth — cài đặt thật nằm ở lib/adminAuth để trang /dang-nhap dùng chung
+// mà không phải kéo theo chunk admin.
+export {
+  authLogin,
+  authLogout,
+  authMe,
+  authGoogle,
+  authConfig,
+  type AdminUser,
+} from '../lib/adminAuth';
 
-export interface AdminUser {
-  id: number;
-  email: string;
-  name?: string | null;
-  role: string;
-}

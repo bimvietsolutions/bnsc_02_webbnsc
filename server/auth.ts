@@ -42,14 +42,20 @@ function signToken(payload: AdminPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-/** Đặt cookie phiên đăng nhập (dùng chung cho login mật khẩu và Google). */
-function setSessionCookie(res: Response, payload: AdminPayload) {
+/**
+ * Đặt cookie phiên đăng nhập (dùng chung cho login mật khẩu và Google).
+ *
+ * @param remember true -> cookie sống 7 ngày; false -> cookie phiên, mất khi
+ *        đóng trình duyệt. Trước đây luôn là 7 ngày nên ô "Ghi nhớ đăng nhập"
+ *        ngoài giao diện chỉ là trang trí.
+ */
+function setSessionCookie(res: Response, payload: AdminPayload, remember = true) {
   res.cookie(COOKIE_NAME, signToken(payload), {
     httpOnly: true,
     sameSite: 'lax',
     secure: isProd,
-    maxAge: MAX_AGE_MS,
     path: '/',
+    ...(remember ? { maxAge: MAX_AGE_MS } : {}),
   });
 }
 
@@ -70,7 +76,7 @@ export function createAuthRouter(): Router {
 
   router.post('/login', async (req, res) => {
     try {
-      const { email, password } = req.body ?? {};
+      const { email, password, remember } = req.body ?? {};
       if (!email || !password)
         return res.status(400).json({ error: 'Vui lòng nhập email và mật khẩu.' });
 
@@ -82,7 +88,7 @@ export function createAuthRouter(): Router {
       if (!ok) return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng.' });
 
       const payload: AdminPayload = { id: user.id, email: user.email, role: user.role };
-      setSessionCookie(res, payload);
+      setSessionCookie(res, payload, remember !== false);
       await prisma.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
       res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
     } catch (e) {
@@ -104,7 +110,7 @@ export function createAuthRouter(): Router {
       if (!googleClient)
         return res.status(400).json({ error: 'Đăng nhập bằng Google chưa được cấu hình.' });
 
-      const { credential } = req.body ?? {};
+      const { credential, remember } = req.body ?? {};
       if (!credential)
         return res.status(400).json({ error: 'Thiếu thông tin xác thực từ Google.' });
 
@@ -129,7 +135,7 @@ export function createAuthRouter(): Router {
           .json({ error: 'Tài khoản Google này chưa được cấp quyền quản trị.' });
 
       const payload: AdminPayload = { id: user.id, email: user.email, role: user.role };
-      setSessionCookie(res, payload);
+      setSessionCookie(res, payload, remember !== false);
       await prisma.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
       res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
     } catch (e) {

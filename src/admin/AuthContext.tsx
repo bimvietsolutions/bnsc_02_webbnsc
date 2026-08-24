@@ -1,23 +1,20 @@
 /**
  * admin/AuthContext.tsx
- * Quản lý phiên đăng nhập admin (đọc /me khi khởi động, login, logout).
+ * Quản lý phiên đăng nhập admin (đọc /me khi khởi động, logout).
+ * Việc đăng nhập do trang công khai /dang-nhap đảm nhận.
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { authGoogle, authLogin, authLogout, authMe, type AdminUser } from './api';
+import { authLogout, authMe, type AdminUser } from './api';
 
 interface AuthCtx {
   user: AdminUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx>({
   user: null,
   loading: true,
-  login: async () => {},
-  loginWithGoogle: async () => {},
   logout: async () => {},
 });
 
@@ -32,23 +29,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const r = await authLogin(email, password);
-    setUser((r as any).user);
-  };
-
-  const loginWithGoogle = async (credential: string) => {
-    const r = await authGoogle(credential);
-    setUser(r.user);
-  };
-
   const logout = async () => {
     await authLogout().catch(() => {});
     setUser(null);
   };
 
   return (
-    <Ctx.Provider value={{ user, loading, login, loginWithGoogle, logout }}>{children}</Ctx.Provider>
+    <Ctx.Provider value={{ user, loading, logout }}>{children}</Ctx.Provider>
   );
 }
 
