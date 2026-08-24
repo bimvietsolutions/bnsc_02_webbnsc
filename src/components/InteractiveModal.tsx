@@ -1,72 +1,226 @@
-import React, { useState, useEffect } from 'react';
-import { X, Check, Laptop, ShieldCheck, Download, Loader2, Play, Users, MapPin, Send, HelpCircle } from 'lucide-react';
+/**
+ * components/InteractiveModal.tsx — Hộp thoại "Cổng dịch vụ Bắc Nam".
+ *
+ * Ba biểu mẫu dùng chung một Dialog: Tải dùng thử · Đăng ký bản quyền · Đào tạo
+ * & tư vấn. Cả ba đều ghi một bản ghi vào bảng `leads`.
+ *
+ * Dựng theo chuẩn Dialog của crm-erp-design-system:
+ *  - Escape đóng, bẫy focus trong hộp thoại, khóa cuộn <body>, trả focus về
+ *    đúng phần tử đã mở hộp thoại; role/aria đầy đủ.
+ *  - Header + Footer dính, chỉ phần thân cuộn, max-height 90vh.
+ *  - Footer PC: Hủy bên trái, nút chính bên phải. Mobile: xếp dọc, chính ở trên.
+ *  - Kiểm tra từng ô khi rời ô (blur); lỗi hiện ngay dưới ô, viền chuyển đỏ;
+ *    sửa đúng là lỗi biến mất ngay, không đợi blur lần hai.
+ *  - Màu/viền lấy từ token `bns-*` khai báo ở src/index.css, không gõ hex.
+ *
+ * Hai hành vi giả đã bỏ:
+ *  1. Tab "Đăng nhập" trước đây chỉ là giao diện — không gọi API, chờ 1,2 giây
+ *     rồi báo "Kết nối hệ thống thành công". Đăng nhập thật nay chỉ có một nơi
+ *     duy nhất là /dang-nhap, nên tab đó thay bằng liên kết sang trang ấy.
+ *  2. Form báo thành công kể cả khi API lưu lead trả về lỗi (lỗi bị nuốt im
+ *     lặng). Nay chờ API trả kết quả thật rồi mới báo.
+ */
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  X, Check, ShieldCheck, Download, Loader2, Send, BadgeCheck,
+  GraduationCap, AlertCircle, LogIn,
+} from 'lucide-react';
 import { apiSend } from '../lib/api';
+
+type Tab = 'download' | 'register' | 'consult';
+type FieldName = 'fullName' | 'phone' | 'email';
 
 interface InteractiveModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'download' | 'login' | 'register' | 'consult';
+  /** 'login' được chấp nhận để tương thích lời gọi cũ; quy về 'register'. */
+  initialTab?: Tab | 'login';
   selectedProductId?: string;
 }
 
-export default function InteractiveModal({ isOpen, onClose, initialTab = 'download', selectedProductId }: InteractiveModalProps) {
-  const [activeTab, setActiveTab] = useState<'download' | 'login' | 'register' | 'consult'>(initialTab);
-  
-  // Form values
+/** Một nguồn cấu hình cho tab + tiêu đề + nhãn nút, không rải if/else khắp JSX. */
+const TABS: { id: Tab; label: string; icon: typeof Download; title: string; submit: string }[] = [
+  { id: 'download', label: 'Tải dùng thử', icon: Download, title: 'Tải phần mềm Dự toán BNSC', submit: 'Bắt đầu tải bản v1.20' },
+  { id: 'register', label: 'Đăng ký', icon: BadgeCheck, title: 'Đăng ký bản quyền', submit: 'Gửi đăng ký' },
+  { id: 'consult', label: 'Đào tạo & tư vấn', icon: GraduationCap, title: 'Đăng ký đào tạo & tư vấn', submit: 'Gửi thông tin đăng ký' },
+];
+
+const LEAD_TYPE: Record<Tab, 'DOWNLOAD' | 'REGISTER' | 'CONSULT'> = {
+  download: 'DOWNLOAD',
+  register: 'REGISTER',
+  consult: 'CONSULT',
+};
+
+const PROVINCES = [
+  'TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ', 'Vĩnh Long', 'An Giang',
+  'Đắk Lắk', 'Tây Ninh', 'Khánh Hòa', 'Gia Lai', 'Đồng Nai', 'Bà Rịa - Vũng Tàu',
+];
+
+const COURSES = [
+  { value: 'dutoan-thucchien', label: 'Lập dự toán & đo bóc khối lượng công trình' },
+  { value: 'dauthau-mang', label: 'Hồ sơ dự thầu & đấu thầu qua mạng' },
+  { value: 'thanh-quyettoan', label: 'Thanh quyết toán vốn đầu tư xây dựng' },
+  { value: 'tuvan-dongia', label: 'Đơn giá - Chỉ số giá (Sở Xây dựng)' },
+];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const VN_PHONE_RE = /^(0|\+84)\d{8,10}$/;
+
+/** Ô bắt buộc dùng chung cho cả ba biểu mẫu -> kiểm tra ở một chỗ. */
+function validateField(name: FieldName, raw: string): string {
+  const v = raw.trim();
+  if (name === 'fullName') return v.length < 2 ? 'Vui lòng nhập họ và tên' : '';
+  if (name === 'phone') {
+    if (!v) return 'Vui lòng nhập số điện thoại';
+    return VN_PHONE_RE.test(v.replace(/[\s.()-]/g, '')) ? '' : 'Số điện thoại không đúng định dạng';
+  }
+  if (!v) return 'Vui lòng nhập email';
+  return EMAIL_RE.test(v) ? '' : 'Email không đúng định dạng';
+}
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const inputBase =
+  'w-full bg-bns-surface rounded-xl px-4 py-3 text-sm text-bns-text-primary border transition-colors ' +
+  'focus:outline-none focus:ring-2 focus:ring-bns-blue/25';
+
+export default function InteractiveModal({
+  isOpen, onClose, initialTab = 'download', selectedProductId,
+}: InteractiveModalProps) {
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab === 'login' ? 'register' : initialTab);
+
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [province, setProvince] = useState('TP. Hồ Chí Minh');
+  const [province, setProvince] = useState(PROVINCES[0]);
   const [company, setCompany] = useState('');
-  const [course, setCourse] = useState('dutoan-thucchien');
-  
-  // Interactive simulator states
+  const [course, setCourse] = useState(COURSES[0].value);
+
+  const [errors, setErrors] = useState<Record<FieldName, string>>({ fullName: '', phone: '', email: '' });
+  const [touched, setTouched] = useState<Record<FieldName, boolean>>({ fullName: false, phone: false, email: false });
+  const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [simulatedProgress, setSimulatedProgress] = useState(0);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [progress, setProgress] = useState(0);
   const [isDone, setIsDone] = useState(false);
 
-  // Sync tab state when modal is toggled
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const fieldRefs: Record<FieldName, React.RefObject<HTMLInputElement | null>> = {
+    fullName: nameRef,
+    phone: phoneRef,
+    email: emailRef,
+  };
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const tab = TABS.find((t) => t.id === activeTab)!;
+
+  // Đặt lại toàn bộ trạng thái mỗi lần mở, tránh mang lỗi của lần trước sang.
   useEffect(() => {
-    if (isOpen) {
-      setActiveTab(initialTab);
-      setIsDone(false);
-      setSimulatedProgress(0);
-      setIsSubmitting(false);
-      setErrorMessage('');
-    }
+    if (!isOpen) return;
+    setActiveTab(initialTab === 'login' ? 'register' : initialTab);
+    setIsDone(false);
+    setProgress(0);
+    setIsSubmitting(false);
+    setFormError('');
+    setErrors({ fullName: '', phone: '', email: '' });
+    setTouched({ fullName: false, phone: false, email: false });
   }, [isOpen, initialTab]);
 
-  if (!isOpen) return null;
+  // Escape đóng · bẫy focus · khóa cuộn body · trả focus về nơi đã mở.
+  useEffect(() => {
+    if (!isOpen) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
-  // List of Vietnamese Southern & Central key construction provinces
-  const provinces = [
-    'TP. Hồ Chí Minh', 'Cần Thơ', 'Vĩnh Long', 'An Giang', 'Đắk Lắk', 
-    'Tây Ninh', 'Khánh Hòa', 'Gia Lai', 'Bình Dương', 'Đồng Nai', 'Bà Rịa - Vũng Tàu'
-  ];
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const items = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter((el) => el.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.body.style.overflow = prevOverflow;
+      opener?.focus?.();
+    };
+  }, [isOpen, onClose]);
+
+  // Dọn interval mô phỏng tải nếu người dùng đóng hộp thoại giữa chừng.
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (isOpen && !isDone) nameRef.current?.focus();
+  }, [isOpen, isDone, activeTab]);
+
+  const setField = useCallback((name: FieldName, value: string) => {
+    const setter = { fullName: setFullName, phone: setPhone, email: setEmail }[name];
+    setter(value);
+    // Đang có lỗi mà người dùng sửa thành hợp lệ -> xóa lỗi ngay, không đợi blur.
+    setErrors((prev) => (prev[name] && !validateField(name, value) ? { ...prev, [name]: '' } : prev));
+  }, []);
+
+  const handleBlur = (name: FieldName, value: string) => {
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+  };
+
+  const switchTab = (id: Tab) => {
+    setActiveTab(id);
+    setFormError('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
 
-    // Quick structural validations
-    if (!fullName || !phone || !email) {
-      setErrorMessage('Vui lòng điền đầy đủ các thông tin bắt buộc (*)');
+    const next: Record<FieldName, string> = {
+      fullName: validateField('fullName', fullName),
+      phone: validateField('phone', phone),
+      email: validateField('email', email),
+    };
+    setErrors(next);
+    setTouched({ fullName: true, phone: true, email: true });
+
+    const invalid = (Object.keys(next) as FieldName[]).filter((k) => next[k]);
+    if (invalid.length) {
+      // Banner tổng chỉ tóm tắt số lỗi rồi nhảy tới ô đầu tiên — nội dung chi
+      // tiết đã hiện inline dưới từng ô, không lặp lại.
+      setFormError(`Còn ${invalid.length} ô chưa hợp lệ, vui lòng kiểm tra lại.`);
+      fieldRefs[invalid[0]].current?.focus();
       return;
     }
 
+    setFormError('');
     setIsSubmitting(true);
 
-    // Lưu lead về DB (không chặn luồng UX mô phỏng bên dưới).
-    const typeMap: Record<string, 'DOWNLOAD' | 'REGISTER' | 'CONSULT'> = {
-      download: 'DOWNLOAD',
-      register: 'REGISTER',
-      consult: 'CONSULT',
-    };
-    const leadType = typeMap[activeTab];
-    if (leadType) {
-      apiSend('/api/public/leads', 'POST', {
-        type: leadType,
+    try {
+      await apiSend('/api/public/leads', 'POST', {
+        type: LEAD_TYPE[activeTab],
         fullName,
         phone,
         email,
@@ -75,383 +229,417 @@ export default function InteractiveModal({ isOpen, onClose, initialTab = 'downlo
         productSlug: selectedProductId || undefined,
         courseSlug: activeTab === 'consult' ? course : undefined,
         source: `modal:${activeTab}`,
-      }).catch(() => {
-        /* im lặng: vẫn giữ trải nghiệm nếu API lỗi */
       });
+    } catch {
+      setIsSubmitting(false);
+      setFormError(
+        'Chưa gửi được thông tin lúc này. Vui lòng thử lại, hoặc gọi hotline 0981 757 527 để được hỗ trợ trực tiếp.',
+      );
+      return;
     }
 
     if (activeTab === 'download') {
-      // Simulate file download bar increments
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 8;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
+      let value = 0;
+      timerRef.current = setInterval(() => {
+        value += 8;
+        if (value >= 100) {
+          value = 100;
+          if (timerRef.current) clearInterval(timerRef.current);
           setIsSubmitting(false);
           setIsDone(true);
         }
-        setSimulatedProgress(progress);
+        setProgress(value);
       }, 120);
     } else {
-      // Simulate login / register/ consult appointments delays
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setIsDone(true);
-      }, 1200);
+      setIsSubmitting(false);
+      setIsDone(true);
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Dark frosted overlay */}
-      <div 
-        className="absolute inset-0 bg-[#060f1e]/85 backdrop-blur-sm transition-opacity" 
-        onClick={onClose}
-      />
-      
-      {/* Modal Container */}
-      <div className="relative bg-white rounded-2xl w-full max-w-xl shadow-2xl border border-[#E1E5ED] overflow-hidden flex flex-col text-[#1A2332] animate-scaleUp z-10 text-left">
-        
-        {/* Top ribbon highlight */}
-        <div className="h-1.5 bg-gradient-to-r from-[#1B5FA8] to-[#F5A623] w-full" />
+  if (!isOpen) return null;
 
-        {/* Modal Header */}
-        <div className="p-6 border-b border-[#E1E5ED] flex items-center justify-between bg-[#F7F9FC]">
-          <div>
-            <span className="text-[10px] font-mono tracking-widest text-[#1B5FA8] uppercase font-bold">
+  const fieldClass = (name: FieldName, extra = '') =>
+    `${inputBase} ${extra} ${
+      touched[name] && errors[name]
+        ? 'border-bns-danger focus:ring-bns-danger/25'
+        : 'border-bns-border focus:border-bns-blue'
+    }`;
+
+  const FieldError = ({ name }: { name: FieldName }) =>
+    touched[name] && errors[name] ? (
+      <p id={`err-${name}`} className="mt-1.5 flex items-center gap-1 text-xs text-bns-danger">
+        <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+        {errors[name]}
+      </p>
+    ) : null;
+
+  const describedBy = (name: FieldName) => (touched[name] && errors[name] ? `err-${name}` : undefined);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+      <div className="absolute inset-0 bg-bns-navy/80 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bnsc-modal-title"
+        className="animate-scaleUp relative z-10 flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-bns-border bg-bns-surface text-left text-bns-text-primary shadow-2xl sm:max-h-[90vh] sm:rounded-2xl"
+      >
+        <div className="h-1.5 w-full shrink-0 bg-gradient-to-r from-bns-blue to-bns-accent" />
+
+        {/* Header — dính đỉnh */}
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-bns-border bg-bns-surface-muted px-5 py-4 sm:px-6">
+          <div className="min-w-0">
+            <span className="block text-[10px] font-bold uppercase tracking-widest text-bns-blue">
               Cổng dịch vụ Bắc Nam
             </span>
-            <h3 className="text-xl font-extrabold text-[#0B2545] tracking-tight mt-0.5">
-              {activeTab === 'download' && 'Tải Phần Mềm Dự Toán BNSC'}
-              {activeTab === 'login' && 'Đăng Nhập Khách Hàng'}
-              {activeTab === 'register' && 'Đăng Ký Bản Quyền'}
-              {activeTab === 'consult' && 'Đăng Ký Đào Tạo & Tư Vấn'}
+            <h3
+              id="bnsc-modal-title"
+              className="mt-0.5 truncate text-lg font-extrabold tracking-tight text-bns-navy sm:text-xl"
+            >
+              {isDone ? 'Đã ghi nhận thông tin' : tab.title}
             </h3>
           </div>
-          <button 
+          <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-[#0B2545] rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            aria-label="Đóng hộp thoại"
+            className="-mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-bns-text-secondary transition-colors hover:bg-bns-border/60 hover:text-bns-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-bns-blue sm:h-10 sm:w-10"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Dynamic Inner Tab Selection (Show only if not completed) */}
+        {/* Tabs */}
         {!isDone && (
-          <div className="flex border-b border-[#E1E5ED] text-sm font-semibold bg-gray-50 overflow-x-auto">
-            <button
-              onClick={() => { setActiveTab('download'); setErrorMessage(''); }}
-              className={`flex-1 py-3 px-4 border-b-2 text-center whitespace-nowrap cursor-pointer transition-colors ${
-                activeTab === 'download' 
-                  ? 'border-[#F5A623] text-[#0B2545] bg-white font-bold' 
-                  : 'border-transparent text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              📥 Tải dùng thử
-            </button>
-            <button
-              onClick={() => { setActiveTab('consult'); setErrorMessage(''); }}
-              className={`flex-1 py-3 px-4 border-b-2 text-center whitespace-nowrap cursor-pointer transition-colors ${
-                activeTab === 'consult' 
-                  ? 'border-[#F5A623] text-[#0B2545] bg-white font-bold' 
-                  : 'border-transparent text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              📊 Đăng ký Học/Tư vấn
-            </button>
-            <button
-              onClick={() => { setActiveTab('login'); setErrorMessage(''); }}
-              className={`flex-1 py-3 px-4 border-b-2 text-center whitespace-nowrap cursor-pointer transition-colors ${
-                activeTab === 'login' 
-                  ? 'border-[#F5A623] text-[#0B2545] bg-white font-bold' 
-                  : 'border-transparent text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              🔑 Đăng nhập
-            </button>
-            <button
-              onClick={() => { setActiveTab('register'); setErrorMessage(''); }}
-              className={`flex-1 py-3 px-4 border-b-2 text-center whitespace-nowrap cursor-pointer transition-colors ${
-                activeTab === 'register' 
-                  ? 'border-[#F5A623] text-[#0B2545] bg-white font-bold' 
-                  : 'border-transparent text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              ✨ Đăng ký khóa mới
-            </button>
+          <div
+            role="tablist"
+            aria-label="Chọn dịch vụ"
+            className="flex shrink-0 overflow-x-auto border-b border-bns-border bg-bns-surface-muted/60 text-sm"
+          >
+            {TABS.map(({ id, label, icon: Icon }) => {
+              const on = id === activeTab;
+              return (
+                <button
+                  key={id}
+                  role="tab"
+                  type="button"
+                  aria-selected={on}
+                  onClick={() => switchTab(id)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-bns-blue ${
+                    on
+                      ? 'border-bns-accent bg-bns-surface text-bns-navy'
+                      : 'border-transparent text-bns-text-secondary hover:text-bns-navy'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* Modal Main Content */}
-        <div className="p-6 overflow-y-auto max-h-[70vh]">
+        {/* Body — vùng duy nhất được cuộn */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
           {isDone ? (
-            /* Successful Interaction Screen */
-            <div className="py-8 text-center flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-5 animate-bounce">
-                <Check className="w-8 h-8 stroke-[3]" />
+            <div className="flex flex-col items-center py-6 text-center">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-bns-success-soft text-bns-success">
+                <Check className="h-8 w-8 stroke-[3]" aria-hidden="true" />
               </div>
-              
-              {activeTab === 'download' ? (
-                <>
-                  <h4 className="text-xl font-bold text-[#0B2545] mb-2">Đăng ký thông tin thành công!</h4>
-                  <p className="text-sm text-gray-600 max-w-sm mx-auto mb-6">
-                    Đường truyền dữ liệu tải xuống an toàn của Bắc Nam Software đang gửi bộ cài đặt tới máy tính của bạn.
-                  </p>
-                  
-                  <div className="bg-[#F7F9FC] border border-[#E1E5ED] rounded-xl p-4 w-full text-left space-y-3.5 mb-6">
-                    <div className="flex items-center gap-3">
-                      <Download className="w-5 h-5 text-[#1B5FA8] shrink-0" />
-                      <div className="min-w-0">
-                        <span className="text-xs text-gray-400 block font-semibold uppercase">Tập tin tải về</span>
-                        <span className="text-sm font-extrabold text-[#0B2545] break-all">DutoanBNSC_Setup_v1.20_Full_2026.zip</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 pt-3 border-t border-[#E1E5ED]">
-                      <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0" />
-                      <div className="min-w-0">
-                        <span className="text-xs text-emerald-600 block font-bold uppercase">Chứng chỉ số an toàn SHA-256</span>
-                        <span className="text-xs text-[#5A6475] font-mono select-all">Verified MD5: e2efbfcc5b364db3bd9db8</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <p className="text-xs text-[#5A6475] italic leading-relaxed">
-                    * Nếu quá trình tải xuống không bắt đầu tự động, vui lòng kiểm tra hộp thư email <strong className="font-semibold text-[#0B2545]">{email}</strong> để nhận liên kết thay thế trực tiếp từ máy chủ BNSC cloud.
-                  </p>
-                </>
-              ) : activeTab === 'consult' ? (
+              {activeTab === 'download' && (
                 <>
-                  <h4 className="text-xl font-bold text-[#0B2545] mb-2">Gửi lịch đăng ký thành công!</h4>
-                  <p className="text-sm text-gray-600 max-w-sm mx-auto mb-6">
-                    Chuyên viên tư vấn xây dựng của Bắc Nam Software đã ghi nhận phiếu đăng ký của anh/chị <strong className="font-bold text-[#0B2545]">{fullName}</strong>.
+                  <h4 className="mb-2 text-xl font-bold text-bns-navy">Đăng ký thông tin thành công!</h4>
+                  <p className="mx-auto mb-6 max-w-sm text-sm text-bns-text-secondary">
+                    Bộ cài đặt đang được gửi tới máy tính của bạn qua đường truyền an toàn của Bắc Nam Software.
                   </p>
-                  <div className="bg-[#E8F5E9] border border-[#C8E6C9] rounded-xl p-4 w-full text-emerald-800 text-sm font-medium">
-                    📍 Điện thoại viên sẽ liên hệ lại qua SĐT <strong className="font-bold font-mono">{phone}</strong> trong vòng 15-30 phút để xác thực đăng ký giáo trình khóa học &amp; áp mã giảm giá 15%.
+                  <div className="mb-6 w-full space-y-3.5 rounded-xl border border-bns-border bg-bns-surface-muted p-4 text-left">
+                    <div className="flex items-center gap-3">
+                      <Download className="h-5 w-5 shrink-0 text-bns-blue" aria-hidden="true" />
+                      <div className="min-w-0">
+                        <span className="block text-xs font-semibold text-bns-text-secondary">Tập tin tải về</span>
+                        <span className="break-all text-sm font-extrabold text-bns-navy">
+                          DutoanBNSC_Setup_v1.20_Full_2026.zip
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 border-t border-bns-border pt-3">
+                      <ShieldCheck className="h-5 w-5 shrink-0 text-bns-success" aria-hidden="true" />
+                      <div className="min-w-0">
+                        <span className="block text-xs font-semibold text-bns-success">
+                          Chứng chỉ số an toàn SHA-256
+                        </span>
+                        <span className="select-all font-mono text-xs text-bns-text-secondary">
+                          Verified MD5: e2efbfcc5b364db3bd9db8
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </>
-              ) : (
-                <>
-                  <h4 className="text-xl font-bold text-[#0B2545] mb-2">Kết nối hệ thống thành công!</h4>
-                  <p className="text-sm text-gray-600 max-w-sm mx-auto mb-6">
-                    Chào mừng <strong className="font-bold text-[#0B2545]">{fullName || email}</strong> quay trở lại mạng lưới dự toán BNSC.
+                  <p className="text-xs leading-relaxed text-bns-text-secondary">
+                    Nếu quá trình tải không tự bắt đầu, vui lòng kiểm tra hộp thư{' '}
+                    <strong className="font-semibold text-bns-navy">{email}</strong> để nhận liên kết thay thế.
                   </p>
-                  <div className="bg-[#E3F2FD] border border-[#BBDEFB] rounded-xl p-4 w-full text-sky-800 text-sm font-medium">
-                    📂 Bạn đã truy cập cơ sở dữ liệu khóa bản quyền phần cứng. Đang chuyển hướng sang trang quản lý chỉ số Đơn giá sở Xây dựng...
+                </>
+              )}
+
+              {activeTab === 'register' && (
+                <>
+                  <h4 className="mb-2 text-xl font-bold text-bns-navy">Đã nhận phiếu đăng ký bản quyền!</h4>
+                  <p className="mx-auto mb-6 max-w-sm text-sm text-bns-text-secondary">
+                    Cảm ơn anh/chị <strong className="font-bold text-bns-navy">{fullName}</strong>. Bộ phận kinh doanh
+                    sẽ liên hệ để xác nhận gói bản quyền phù hợp.
+                  </p>
+                  <div className="w-full rounded-xl border border-bns-border bg-bns-info-soft p-4 text-sm font-medium text-bns-blue">
+                    Chúng tôi sẽ gọi tới số <strong className="font-mono font-bold">{phone}</strong> trong giờ hành
+                    chính và gửi báo giá qua <strong className="font-semibold">{email}</strong>.
                   </div>
                 </>
               )}
 
-              <button
-                onClick={onClose}
-                className="mt-8 bg-[#0B2545] hover:bg-[#1B5FA8] text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-colors cursor-pointer"
-              >
-                Đóng hộp thoại
-              </button>
+              {activeTab === 'consult' && (
+                <>
+                  <h4 className="mb-2 text-xl font-bold text-bns-navy">Gửi lịch đăng ký thành công!</h4>
+                  <p className="mx-auto mb-6 max-w-sm text-sm text-bns-text-secondary">
+                    Chuyên viên tư vấn đã ghi nhận phiếu đăng ký của anh/chị{' '}
+                    <strong className="font-bold text-bns-navy">{fullName}</strong>.
+                  </p>
+                  <div className="w-full rounded-xl border border-bns-border bg-bns-success-soft p-4 text-sm font-medium text-bns-success">
+                    Điện thoại viên sẽ liên hệ qua số <strong className="font-mono font-bold">{phone}</strong> trong
+                    vòng 15–30 phút để xác nhận khóa học.
+                  </div>
+                </>
+              )}
             </div>
           ) : (
-            /* Forms Input Views */
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              
-              {errorMessage && (
-                <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium p-3.5 rounded-xl">
-                  ⚠️ {errorMessage}
+            <form id="bnsc-lead-form" onSubmit={handleSubmit} noValidate className="space-y-4">
+              {formError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2.5 rounded-xl border-l-[3px] border-bns-danger bg-bns-danger-soft p-3.5 text-sm font-medium text-bns-danger"
+                >
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{formError}</span>
                 </div>
               )}
 
-              {/* Informative tips based on current action tab */}
-              {activeTab === 'download' && (
-                <div className="text-xs text-slate-500 bg-[#1B5FA8]/5 border border-[#1B5FA8]/10 p-3 rounded-xl leading-normal">
-                  💡 Nhập thông tin để nhận miễn phí khóa cứng ảo bản quyền học tập v1.20 kèm bộ dữ liệu đơn giá mới nhất của 63 Tỉnh thành cả nước.
-                </div>
-              )}
+              <p className="rounded-xl border border-bns-blue/15 bg-bns-info-soft p-3 text-xs leading-normal text-bns-text-secondary">
+                {activeTab === 'download' &&
+                  'Nhận miễn phí khóa bản quyền học tập v1.20 kèm bộ dữ liệu đơn giá mới nhất của 63 tỉnh thành.'}
+                {activeTab === 'register' &&
+                  'Điền thông tin để nhận báo giá bản quyền và tư vấn gói phù hợp với quy mô đơn vị.'}
+                {activeTab === 'consult' &&
+                  'Các khóa bồi dưỡng do kỹ sư nhiều năm kinh nghiệm trực tiếp hướng dẫn. Học viên được tặng license Dự toán BNSC.'}
+              </p>
 
-              {activeTab === 'consult' && (
-                <div className="text-xs text-slate-500 bg-purple-50 border border-purple-100 p-3 rounded-xl leading-normal">
-                  🎓 Các khóa chiêu sinh bồi dưỡng do trực tiếp giảng viên/ kỹ sư dày dặn thâm niên công phu hướng dẫn. Học viên được tài trợ trọn đời license Dự Toán BNSC.
-                </div>
-              )}
+              <fieldset className="space-y-4 border-0 p-0">
+                <legend className="mb-1 text-xs font-bold uppercase tracking-wider text-bns-text-secondary">
+                  Thông tin liên hệ
+                </legend>
 
-              {/* Common Fields: Name */}
-              {activeTab !== 'login' && (
                 <div>
-                  <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wider mb-1.5">
-                    Họ & tên học viên / kỹ sư <span className="text-red-500">*</span>
+                  <label htmlFor="lead-fullname" className="mb-1.5 block text-xs font-semibold text-bns-navy">
+                    Họ và tên <span className="text-bns-danger">*</span>
                   </label>
                   <input
+                    id="lead-fullname"
+                    ref={nameRef}
                     type="text"
-                    required
+                    autoComplete="name"
                     placeholder="Nguyễn Văn A"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-white border border-[#E1E5ED] rounded-xl px-4 py-3 text-sm text-[#1A2332] focus:outline-none focus:border-[#1B5FA8] focus:ring-1 focus:ring-[#1B5FA8] transition-all"
+                    onChange={(e) => setField('fullName', e.target.value)}
+                    onBlur={(e) => handleBlur('fullName', e.target.value)}
+                    aria-invalid={touched.fullName && !!errors.fullName}
+                    aria-describedby={describedBy('fullName')}
+                    className={fieldClass('fullName')}
                   />
+                  <FieldError name="fullName" />
                 </div>
-              )}
 
-              {/* Double Column layout for Phone & Email */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wider mb-1.5">
-                    Số điện thoại liên hệ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="09xx.xxx.xxx"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-white border border-[#E1E5ED] rounded-xl px-4 py-3 text-sm text-[#1A2332] focus:outline-none focus:border-[#1B5FA8] focus:ring-1 focus:ring-[#1B5FA8] transition-all font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wider mb-1.5">
-                    Địa chỉ Email liên lạc <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="kySuXaydung@bacnam.com.vn"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white border border-[#E1E5ED] rounded-xl px-4 py-3 text-sm text-[#1A2332] focus:outline-none focus:border-[#1B5FA8] focus:ring-1 focus:ring-[#1B5FA8] transition-all font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Extra Course field if we are registering consultancy */}
-              {activeTab === 'consult' && (
-                <div>
-                  <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wider mb-1.5">
-                    Khóa đào tạo nghiệp vụ lựa chọn
-                  </label>
-                  <select
-                    value={course}
-                    onChange={(e) => setCourse(e.target.value)}
-                    className="w-full bg-white border border-[#E1E5ED] rounded-xl px-4 py-3 text-sm text-[#1A2332] focus:outline-none focus:border-[#1B5FA8] transition-all"
-                  >
-                    <option value="dutoan-thucchien">🏗️ Khóa lập Dự toán & Đo bóc khối lượng công trình</option>
-                    <option value="dauthau-mang">💻 Nghiệp vụ Hồ Sơ Bìa & Đấu thầu qua mạng mới</option>
-                    <option value="thanh-quyettoan">📐 Thanh quyết toán vốn đầu tư xây dựng</option>
-                    <option value="tuvan-dongia">📜 Hợp tác xây dựng Đơn giá - Chỉ số giá (Sở XD)</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Province Picker & Enterprise fields */}
-              {activeTab !== 'login' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wider mb-1.5">
-                      Đơn giá Địa phương cần áp dụng
+                    <label htmlFor="lead-phone" className="mb-1.5 block text-xs font-semibold text-bns-navy">
+                      Số điện thoại <span className="text-bns-danger">*</span>
+                    </label>
+                    <input
+                      id="lead-phone"
+                      ref={phoneRef}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="0912 345 678"
+                      value={phone}
+                      onChange={(e) => setField('phone', e.target.value)}
+                      onBlur={(e) => handleBlur('phone', e.target.value)}
+                      aria-invalid={touched.phone && !!errors.phone}
+                      aria-describedby={describedBy('phone')}
+                      className={fieldClass('phone', 'font-mono tabular-nums')}
+                    />
+                    <FieldError name="phone" />
+                  </div>
+                  <div>
+                    <label htmlFor="lead-email" className="mb-1.5 block text-xs font-semibold text-bns-navy">
+                      Email <span className="text-bns-danger">*</span>
+                    </label>
+                    <input
+                      id="lead-email"
+                      ref={emailRef}
+                      type="email"
+                      autoComplete="email"
+                      placeholder="kysu@congty.vn"
+                      value={email}
+                      onChange={(e) => setField('email', e.target.value)}
+                      onBlur={(e) => handleBlur('email', e.target.value)}
+                      aria-invalid={touched.email && !!errors.email}
+                      aria-describedby={describedBy('email')}
+                      className={fieldClass('email')}
+                    />
+                    <FieldError name="email" />
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset className="space-y-4 border-0 p-0">
+                <legend className="mb-1 text-xs font-bold uppercase tracking-wider text-bns-text-secondary">
+                  {activeTab === 'consult' ? 'Khóa học & đơn vị công tác' : 'Đơn vị công tác'}
+                </legend>
+
+                {activeTab === 'consult' && (
+                  <div>
+                    <label htmlFor="lead-course" className="mb-1.5 block text-xs font-semibold text-bns-navy">
+                      Khóa đào tạo
                     </label>
                     <select
+                      id="lead-course"
+                      value={course}
+                      onChange={(e) => setCourse(e.target.value)}
+                      className={`${inputBase} border-bns-border focus:border-bns-blue`}
+                    >
+                      {COURSES.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="lead-province" className="mb-1.5 block text-xs font-semibold text-bns-navy">
+                      Đơn giá địa phương áp dụng
+                    </label>
+                    <select
+                      id="lead-province"
                       value={province}
                       onChange={(e) => setProvince(e.target.value)}
-                      className="w-full bg-white border border-[#E1E5ED] rounded-xl px-4 py-3 text-sm text-[#1A2332] focus:outline-none focus:border-[#1B5FA8] transition-all"
+                      className={`${inputBase} border-bns-border focus:border-bns-blue`}
                     >
-                      {provinces.map((prov) => (
-                        <option key={prov} value={prov}>{prov}</option>
+                      {PROVINCES.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wider mb-1.5">
-                      Cơ quan / Doanh nghiệp hoạt động
+                    <label htmlFor="lead-company" className="mb-1.5 block text-xs font-semibold text-bns-navy">
+                      Cơ quan / doanh nghiệp
                     </label>
                     <input
+                      id="lead-company"
                       type="text"
-                      placeholder="vd: Tổng Công ty CP Xây Dựng 1"
+                      autoComplete="organization"
+                      placeholder="Tổng Công ty CP Xây dựng 1"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
-                      className="w-full bg-white border border-[#E1E5ED] rounded-xl px-4 py-3 text-sm text-[#1A2332] focus:outline-none focus:border-[#1B5FA8] transition-all"
+                      className={`${inputBase} border-bns-border focus:border-bns-blue`}
                     />
                   </div>
                 </div>
-              )}
+              </fieldset>
 
-              {/* Password prompt only if logging in */}
-              {activeTab === 'login' && (
-                <div>
-                  <label className="block text-xs font-bold text-[#0B2545] uppercase tracking-wider mb-1.5">
-                    Mật khẩu truy cập
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                    className="w-full bg-white border border-[#E1E5ED] rounded-xl px-4 py-3 text-sm text-[#1A2332] focus:outline-none focus:border-[#1B5FA8] focus:ring-1 focus:ring-[#1B5FA8] transition-all"
-                  />
-                  <div className="flex items-center justify-between mt-2.5">
-                    <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
-                      <input type="checkbox" className="rounded text-[#1B5FA8]" /> Ghi nhớ đăng nhập
-                    </label>
-                    <a href="#reset" className="text-xs text-[#1B5FA8] hover:underline">Quên mật khẩu?</a>
-                  </div>
-                </div>
-              )}
-
-              {/* Terms of construction software usage disclaimer */}
-              <p className="text-[10px] text-gray-400 leading-normal text-left pt-2">
-                Bằng việc nhấp lệnh nộp hồ sơ, anh/chị đồng thuận cho phép Bắc Nam cung cấp tư vấn chính sách và bảo mật số điện thoại theo đúng Luật An toàn thông tin mạng hiện hành.
+              <p className="pt-1 text-[11px] leading-normal text-bns-text-tertiary">
+                Khi gửi thông tin, anh/chị đồng ý để Bắc Nam Software liên hệ tư vấn và cam kết bảo mật dữ liệu theo
+                Luật An toàn thông tin mạng hiện hành.
               </p>
 
-              {/* Submit Buttons / Progress Bars simulation */}
-              <div className="pt-4 border-t border-[#E1E5ED] mt-6 flex flex-col sm:flex-row items-center gap-3">
-                {isSubmitting ? (
-                  <div className="w-full">
-                    {activeTab === 'download' ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-[#1B5FA8] flex items-center gap-1">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang thiết lập tải gói setup...
-                          </span>
-                          <span className="text-gray-500">{simulatedProgress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                          <div 
-                            className="bg-[#F5A623] h-full rounded-full transition-all duration-100" 
-                            style={{ width: `${simulatedProgress}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="w-full bg-slate-100 text-slate-400 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 mb-2"
-                      >
-                        <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
-                        Vui lòng chờ trong giây lát...
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      type="submit"
-                      className="w-full sm:flex-1 bg-[#0B2545] hover:bg-[#1B5FA8] text-white font-extrabold py-3.5 px-6 rounded-xl text-sm transition-all shadow-lg text-center cursor-pointer active:scale-95 flex items-center justify-center gap-2"
-                    >
-                      {activeTab === 'download' && '📥 Bắt đầu tải bản v1.20'}
-                      {activeTab === 'consult' && '🚀 Gửi thông tin đăng ký'}
-                      {activeTab === 'login' && '🔑 Đăng nhập tài khoản'}
-                      {activeTab === 'register' && '✨ Nhận khóa bản quyền'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="w-full sm:w-auto px-6 py-3.5 border border-[#E1E5ED] text-gray-500 hover:text-black font-semibold rounded-xl text-sm transition-colors cursor-pointer text-center"
-                    >
-                      Bỏ qua
-                    </button>
-                  </>
-                )}
+              <div className="border-t border-bns-border pt-4 text-center text-xs text-bns-text-secondary">
+                Đã có tài khoản quản trị nội dung?{' '}
+                <Link
+                  to="/dang-nhap"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1 font-semibold text-bns-blue hover:underline"
+                >
+                  <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
+                  Đăng nhập
+                </Link>
               </div>
-
             </form>
           )}
         </div>
 
+        {/* Footer — dính đáy. PC: Hủy trái, nút chính phải. Mobile: xếp dọc, chính ở trên. */}
+        <div className="shrink-0 border-t border-bns-border bg-bns-surface px-5 py-4 sm:px-6">
+          {isDone ? (
+            <div className="flex sm:justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-11 w-full rounded-lg bg-bns-navy px-6 text-sm font-bold text-white transition-colors hover:bg-bns-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-bns-blue focus-visible:ring-offset-2 sm:w-auto"
+              >
+                Đóng
+              </button>
+            </div>
+          ) : isSubmitting && activeTab === 'download' ? (
+            <div className="space-y-2" role="status" aria-live="polite">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="flex items-center gap-1.5 text-bns-blue">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  Đang chuẩn bị gói cài đặt…
+                </span>
+                <span className="tabular-nums text-bns-text-secondary">{progress}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-bns-border">
+                <div
+                  className="h-full rounded-full bg-bns-accent transition-all duration-100"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="h-11 rounded-lg border border-bns-border px-6 text-sm font-semibold text-bns-text-secondary transition-colors hover:border-bns-border-strong hover:text-bns-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-bns-blue disabled:opacity-60 sm:mr-auto"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                form="bnsc-lead-form"
+                disabled={isSubmitting}
+                className="flex h-11 items-center justify-center gap-2 rounded-lg bg-bns-navy px-6 text-sm font-extrabold text-white shadow-md transition-colors hover:bg-bns-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-bns-blue focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Đang gửi…
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" aria-hidden="true" />
+                    {tab.submit}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

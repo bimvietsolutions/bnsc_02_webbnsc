@@ -412,7 +412,7 @@ export default function LoginPage() {
                     onClick={onRegisterClick}
                     className="w-full h-11 bg-transparent border border-[#E2E8F0] hover:border-[#1B5FA8] text-gray-700 hover:text-[#1B5FA8] font-bold rounded-lg text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
                   >
-                    Đăng ký dùng thử phần mềm Dự toán
+                    Đăng ký
                   </button>
                 </>
               )}
