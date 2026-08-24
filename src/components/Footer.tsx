@@ -22,10 +22,9 @@ export default function Footer() {
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-11 h-11 shrink-0">
                 <img 
-                  src="https://bacnam.com.vn/uploads/logo/logo_60b98e41a181e3.png" 
+                  src="/brand/logo.png" 
                   alt="Bac Nam Logo" 
                   className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
                 />
               </div>
               <div className="flex flex-col">

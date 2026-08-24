@@ -4,9 +4,20 @@
  * production (hoặc đặt biến môi trường VITE_SITE_URL khi build).
  */
 
+const SITE_URL =
+  (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || 'https://bacnam.com.vn';
+
+/**
+ * Logo nằm trong repo tại static/brand/logo.png nên đi cùng bản build.
+ * Trước đây mọi chỗ đều trỏ tới https://bacnam.com.vn/uploads/logo/... của
+ * hosting cũ — ngày tắt hosting đó là logo hỏng toàn site, và đường dẫn
+ * /uploads/logo/ cũng không tồn tại trên VPS mới.
+ */
+export const LOGO_PATH = '/brand/logo.png';
+
 export const siteConfig = {
   /** Tên miền chính (không có dấu "/" ở cuối). */
-  siteUrl: (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || 'https://bacnam.com.vn',
+  siteUrl: SITE_URL,
   siteName: 'Bắc Nam Software (BNSC)',
   /** Tiêu đề mặc định / trang chủ. */
   defaultTitle: 'Phần mềm Dự toán BNSC | Bắc Nam Software (BNSC)',
@@ -29,12 +40,12 @@ export const siteConfig = {
   locale: 'vi_VN',
   lang: 'vi',
   /** Ảnh chia sẻ mạng xã hội mặc định (nên là ảnh tuyệt đối 1200x630). */
-  defaultImage: 'https://bacnam.com.vn/uploads/logo/logo_60b98e41a181e3.png',
+  defaultImage: `${SITE_URL}${LOGO_PATH}`,
   twitterHandle: '@bacnamsoftware',
   organization: {
     name: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam',
     legalName: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC)',
-    logo: 'https://bacnam.com.vn/uploads/logo/logo_60b98e41a181e3.png',
+    logo: `${SITE_URL}${LOGO_PATH}`,
     phone: '+84966965075',
     email: 'contact@bacnam.com.vn',
     address: {

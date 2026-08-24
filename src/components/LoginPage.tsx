@@ -168,10 +168,9 @@ export default function LoginPage() {
             <div className="relative z-10 flex items-center gap-3">
               <div className="w-10 h-10 shrink-0">
                 <img
-                  src="https://bacnam.com.vn/uploads/logo/logo_60b98e41a181e3.png"
+                  src="/brand/logo.png"
                   alt="Bac Nam Logo"
                   className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
                 />
               </div>
               <span className="font-extrabold text-sm tracking-wider uppercase">Bắc Nam Software</span>
@@ -240,9 +239,8 @@ export default function LoginPage() {
             <div className="relative z-10 w-full max-w-sm mx-auto mt-[16vh] md:mt-0">
               <div className="text-center mb-6">
                 <img
-                  src="https://bacnam.com.vn/uploads/logo/logo_60b98e41a181e3.png"
+                  src="/brand/logo.png"
                   alt="BNSC Logo"
-                  referrerPolicy="no-referrer"
                   className="h-16 mx-auto object-contain drop-shadow-sm"
                 />
               </div>
