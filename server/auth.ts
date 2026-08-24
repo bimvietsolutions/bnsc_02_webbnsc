@@ -14,8 +14,31 @@ const JWT_SECRET = process.env.JWT_SECRET || 'bnsc-dev-secret-CHANGE-ME';
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 ngày
 const isProd = process.env.NODE_ENV === 'production';
 
-// Đăng nhập bằng Google (tùy chọn): chỉ bật khi có GOOGLE_CLIENT_ID.
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+/**
+ * Đăng nhập bằng Google (tùy chọn): chỉ bật khi GOOGLE_CLIENT_ID hợp lệ.
+ *
+ * Client ID thật của Google luôn có dạng "<số>-<chuỗi>.apps.googleusercontent.com".
+ * Trên VPS biến này từng bị để nguyên chuỗi giữ chỗ "<GOOGLE_CLIENT_ID>" — trình
+ * duyệt vẫn hiện nút Google, bấm vào thì Google trả "The OAuth client was not
+ * found" mà không có manh mối nào ở phía website. Coi mọi giá trị sai định dạng
+ * là CHƯA cấu hình: nút không hiện, và log nói rõ lý do.
+ */
+const GOOGLE_CLIENT_ID_RE = /^\d+-[a-z0-9-_]+\.apps\.googleusercontent\.com$/i;
+
+function resolveGoogleClientId(): string {
+  const raw = (process.env.GOOGLE_CLIENT_ID ?? '').trim();
+  if (!raw) return '';
+  if (!GOOGLE_CLIENT_ID_RE.test(raw)) {
+    console.warn(
+      `GOOGLE_CLIENT_ID không đúng định dạng ("${raw}") — đã TẮT đăng nhập bằng Google. ` +
+        'Giá trị đúng có dạng <số>-<chuỗi>.apps.googleusercontent.com.',
+    );
+    return '';
+  }
+  return raw;
+}
+
+const GOOGLE_CLIENT_ID = resolveGoogleClientId();
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 // Dừng hẳn thay vì cảnh báo: chuỗi dự phòng nằm công khai trong mã nguồn, nên
