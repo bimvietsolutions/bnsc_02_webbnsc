@@ -4,7 +4,7 @@
  * biểu mẫu. ResourceList/ResourceForm render generic dựa trên cấu hình này.
  */
 import {
-  Newspaper, BookOpen, Package, Users, Image, BarChart3, Layers, GraduationCap,
+  Newspaper, Package, Users, Image, BarChart3, Layers, GraduationCap,
   HelpCircle, Headphones, MonitorSmartphone, Menu, Settings, Inbox, ShieldCheck,
   FileImage, Tags, ListTree, Link2, type LucideIcon,
 } from 'lucide-react';
@@ -194,54 +194,6 @@ export const resourceDefs: ResourceDef[] = [
     ],
   },
   {
-    slug: 'news', label: 'Tin tức (bảng cũ)', singular: 'tin tức', icon: Newspaper, group: 'Dữ liệu cũ',
-    columns: [
-      { name: 'title', label: 'Tiêu đề' },
-      { name: 'category', label: 'Danh mục', accessor: (r) => r.category?.name },
-      { name: 'views', label: 'Lượt xem' },
-      { name: 'isPublished', label: 'Xuất bản', type: 'boolean' },
-    ],
-    fields: [
-      { name: 'title', label: 'Tiêu đề', type: 'text', required: true, full: true },
-      { name: 'slug', label: 'Slug (URL)', type: 'text', required: true, help: 'Duy nhất, không dấu' },
-      { name: 'categoryId', label: 'Danh mục', type: 'relation', relation: { resource: 'news-categories', labelField: 'name' }, required: true },
-      { name: 'excerpt', label: 'Tóm tắt', type: 'textarea', full: true },
-      { name: 'contentBody', label: 'Nội dung', type: 'textarea', full: true },
-      { name: 'imageUrl', label: 'Ảnh (URL)', type: 'image' },
-      { name: 'author', label: 'Tác giả', type: 'text' },
-      { name: 'dateText', label: 'Ngày hiển thị', type: 'text', help: 'vd 18 Thg 5, 2026' },
-      { name: 'views', label: 'Lượt xem', type: 'number' },
-      { name: 'isPublished', label: 'Xuất bản', type: 'boolean' },
-      ...seo,
-    ],
-  },
-  {
-    slug: 'library', label: 'Thư viện (bảng cũ)', singular: 'bài thư viện', icon: BookOpen, group: 'Dữ liệu cũ',
-    columns: [
-      { name: 'title', label: 'Tiêu đề' },
-      { name: 'category', label: 'Danh mục', accessor: (r) => r.category?.name },
-      { name: 'views', label: 'Lượt xem' },
-      { name: 'isPublished', label: 'Xuất bản', type: 'boolean' },
-    ],
-    fields: [
-      { name: 'title', label: 'Tiêu đề', type: 'text', required: true, full: true },
-      { name: 'slug', label: 'Slug (URL)', type: 'text', required: true },
-      { name: 'categoryId', label: 'Danh mục', type: 'relation', relation: { resource: 'library-categories', labelField: 'name' }, required: true },
-      { name: 'summary', label: 'Tóm tắt', type: 'textarea', full: true },
-      { name: 'content', label: 'Nội dung chi tiết', type: 'textarea', full: true },
-      { name: 'imageUrl', label: 'Ảnh (URL)', type: 'image' },
-      { name: 'videoUrl', label: 'Video (URL)', type: 'text' },
-      { name: 'author', label: 'Tác giả', type: 'text' },
-      { name: 'dateText', label: 'Ngày hiển thị', type: 'text' },
-      { name: 'views', label: 'Lượt xem', type: 'number' },
-      { name: 'attachmentUrl', label: 'File đính kèm (URL)', type: 'text' },
-      { name: 'attachmentName', label: 'Tên file', type: 'text' },
-      { name: 'attachmentSize', label: 'Dung lượng', type: 'text' },
-      { name: 'isPublished', label: 'Xuất bản', type: 'boolean' },
-      ...seo,
-    ],
-  },
-  {
     slug: 'products', label: 'Sản phẩm', singular: 'sản phẩm', icon: Package, group: 'Nội dung',
     columns: [
       { name: 'name', label: 'Tên' },
@@ -395,32 +347,6 @@ export const resourceDefs: ResourceDef[] = [
     ],
   },
   {
-    slug: 'news-categories', label: 'Danh mục Tin tức (cũ)', singular: 'danh mục', icon: Layers, group: 'Dữ liệu cũ',
-    columns: [
-      { name: 'name', label: 'Tên' },
-      { name: 'slug', label: 'Slug' },
-      { name: 'sortOrder', label: 'Thứ tự' },
-    ],
-    fields: [
-      { name: 'name', label: 'Tên', type: 'text', required: true },
-      { name: 'slug', label: 'Slug', type: 'text', required: true },
-      F.sortOrder,
-    ],
-  },
-  {
-    slug: 'library-categories', label: 'Danh mục Thư viện (cũ)', singular: 'danh mục', icon: Layers, group: 'Dữ liệu cũ',
-    columns: [
-      { name: 'name', label: 'Tên' },
-      { name: 'slug', label: 'Slug' },
-      { name: 'sortOrder', label: 'Thứ tự' },
-    ],
-    fields: [
-      { name: 'name', label: 'Tên', type: 'text', required: true },
-      { name: 'slug', label: 'Slug', type: 'text', required: true },
-      F.sortOrder,
-    ],
-  },
-  {
     slug: 'settings', label: 'Cấu hình site', singular: 'cấu hình', icon: Settings, group: 'Hệ thống',
     canCreate: true,
     columns: [
@@ -498,6 +424,4 @@ export const resourceBySlug = (slug: string) => resourceDefs.find((r) => r.slug 
 
 export const resourceGroups = [
   'Nội dung', 'Trang chủ', 'Tư vấn & Đào tạo', 'Hỗ trợ', 'Cấu trúc', 'Hệ thống',
-  // Giữ tới khi cutover xong rồi mới gỡ (xem plan/07, giai đoạn P7).
-  'Dữ liệu cũ',
 ];

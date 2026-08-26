@@ -96,82 +96,6 @@ model Product {
   @@map("products")
 }
 
-// ------------------------------- Tin tức -------------------------------------
-model NewsCategory {
-  id        Int           @id @default(autoincrement())
-  slug      String        @unique
-  name      String        @unique
-  sortOrder Int           @default(0)
-  articles  NewsArticle[]
-
-  @@map("news_categories")
-}
-
-model NewsArticle {
-  id              Int          @id @default(autoincrement())
-  slug            String       @unique
-  title           String
-  excerpt         String       @db.Text
-  contentBody     String       @db.Text
-  imageUrl        String?
-  author          String?      @default("Ban Biên Tập BNSC")
-  categoryId      Int
-  category        NewsCategory @relation(fields: [categoryId], references: [id])
-  dateText        String? // chuỗi ngày hiển thị hiện tại
-  publishedAt     DateTime?    @default(now())
-  views           Int          @default(0)
-  isPublished     Boolean      @default(true)
-  metaTitle       String?
-  metaDescription String?      @db.Text
-  ogImage         String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  @@index([categoryId])
-  @@index([isPublished, publishedAt])
-  @@map("news_articles")
-}
-
-// ------------------------------- Thư viện hướng dẫn --------------------------
-model LibraryCategory {
-  id        Int              @id @default(autoincrement())
-  slug      String           @unique
-  name      String           @unique
-  sortOrder Int              @default(0)
-  articles  LibraryArticle[]
-
-  @@map("library_categories")
-}
-
-model LibraryArticle {
-  id              Int             @id @default(autoincrement())
-  slug            String          @unique
-  title           String
-  summary         String          @db.Text
-  content         String?         @db.Text // nội dung chi tiết (điền dần)
-  imageUrl        String?
-  videoUrl        String?
-  author          String?
-  categoryId      Int
-  category        LibraryCategory @relation(fields: [categoryId], references: [id])
-  dateText        String?
-  publishedAt     DateTime?       @default(now())
-  views           Int             @default(0)
-  attachmentUrl   String?
-  attachmentName  String?
-  attachmentSize  String?
-  isPublished     Boolean         @default(true)
-  metaTitle       String?
-  metaDescription String?         @db.Text
-  ogImage         String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([categoryId])
-  @@index([isPublished, publishedAt])
-  @@map("library_articles")
-}
-
 // ------------------------------- Khách hàng ----------------------------------
 model Customer {
   id        Int     @id @default(autoincrement())
@@ -347,7 +271,9 @@ model Media {
 // Thay cho cặp News*/Library* rời rạc: một model Article duy nhất, phân biệt
 // bằng `section`, kèm Category dạng cây, Tag, SeriesNode (mục lục giáo trình)
 // và Redirect (301 từ URL cũ). Xem plan/07-ke-hoach-migration-du-lieu-cu.md.
-// Các model news_articles / library_articles cũ được giữ tới khi cutover xong.
+// Bốn bảng cũ news_articles/library_articles/news_categories/library_categories
+// đã được bỏ (migration 20260826_bo_bang_noi_dung_cu) sau khi xác nhận toàn bộ
+// 33 dòng trong đó là dữ liệu gieo sẵn, không ai từng sửa.
 // =============================================================================
 
 enum ContentSection {
