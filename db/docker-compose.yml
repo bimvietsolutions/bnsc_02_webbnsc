@@ -12,7 +12,10 @@ services:
       POSTGRES_DB: bnsc
       TZ: Asia/Ho_Chi_Minh
     ports:
-      - '5432:5432' # cân nhắc bỏ publish ra ngoài nếu app cùng mạng Docker
+      # Cổng trên máy chủ đổi được bằng biến POSTGRES_PORT — máy lập trình
+      # thường đã có Postgres của dự án khác chiếm 5432.
+      # Cân nhắc bỏ publish ra ngoài nếu app chạy cùng mạng Docker.
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - bnsc_pgdata:/var/lib/postgresql/data
     healthcheck:

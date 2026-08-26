@@ -18,7 +18,8 @@
     "db:create-admin": "tsx db/create-admin.mts",
     "legacy:mirror": "tsx scripts/legacy/mirror-media.mts",
     "legacy:import": "tsx scripts/legacy/import.mts",
-    "legacy:prune": "tsx scripts/legacy/prune-media.mts"
+    "legacy:prune": "tsx scripts/legacy/prune-media.mts",
+    "db:sync-settings": "tsx scripts/sync-site-settings.mts"
   },
   "prisma": {
     "seed": "tsx db/seed.ts"
