@@ -36,7 +36,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
   const [history, setHistory] = useState<Message[]>([]);
   
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { hotlineDisplay } = useContactInfo();
+  const { hotlineDisplay, zaloName, zaloPhone, zaloHref } = useContactInfo();
 
   const initialMessage = 'Xin chào quý khách! Tôi là Trợ lý AI của **Bắc Nam Software (BNSC)**. Chúc quý khách một ngày thành công và nhiều niềm vui.\n\nTôi có thể hỗ trợ quý khách về bộ cài phần mềm Dự toán BNSC mới nhất, khóa học đo bóc khối lượng - định giá xây dựng, hoặc các giải giải đáp văn bản thông tư nhà nước. Quý khách đang quan tâm nội dung nào ạ?';
 
@@ -95,7 +95,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
     } catch (error: any) {
       setHistory(prev => [...prev, { 
         role: 'model', 
-        text: '⚠️ **Hệ thống AI bận:** Kết nối mạng bị gián đoạn. Anh/chị vui lòng liên hệ ngay hỗ trợ trực tuyến qua hotline **0981757527** để được cài đặt và chuyển giao phần mềm lập tức!' 
+        text: `⚠️ **Hệ thống AI bận:** Kết nối mạng bị gián đoạn. Anh/chị vui lòng liên hệ ngay hỗ trợ trực tuyến qua hotline **${hotlineDisplay}** để được cài đặt và chuyển giao phần mềm lập tức!` 
       }]);
     } finally {
       setLoading(false);
@@ -195,15 +195,15 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
 
         {/* Zalo Premium Squircle */}
         <a 
-          href={SOCIAL.zalo} 
+          href={zaloHref} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-sky-500 border border-white/[0.08] hover:border-sky-400/30 flex items-center justify-center text-slate-200 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-sky-500/20 cursor-pointer text-center"
-          aria-label="Zalo Khắc Tiệp BNSC"
+          aria-label={`Zalo ${zaloName} BNSC`}
         >
           <ZaloIcon />
           <span className="absolute right-14 scale-0 group-hover:scale-100 origin-right transition-all duration-200 bg-slate-950 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-white/5 shadow-xl whitespace-nowrap">
-            Zalo Khắc Tiệp: 0981757527
+            Zalo {zaloName}: {zaloPhone}
           </span>
         </a>
 

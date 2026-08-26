@@ -57,12 +57,15 @@ export const THEME_COLOR = '#0B2545';
  * trang chủ nền tảng chứ không ra trang công ty, và JSON-LD gửi Google 3 URL
  * rác. Link thật vốn chỉ nằm trong FloatingActions.tsx.
  */
+/** Người phụ trách kênh Zalo hỗ trợ (mặc định; admin sửa được trong Cấu hình site). */
+export const SUPPORT_ZALO = { name: 'Khắc Tiệp', phone: '0981757527' } as const;
+
 export const SOCIAL = {
   facebook: 'https://www.facebook.com/bacnam.com.vn/',
   /** Trang kênh (dùng cho sameAs). Tab video: `${SOCIAL.youtube}/videos`. */
   youtube: 'https://www.youtube.com/c/DutoanBNSC',
   messenger: 'https://m.me/100027194902779',
-  zalo: 'https://zalo.me/0981757527',
+  zalo: `https://zalo.me/${SUPPORT_ZALO.phone}`,
 } as const;
 
 export const LOCALE = 'vi_VN';

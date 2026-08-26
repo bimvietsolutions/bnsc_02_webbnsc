@@ -12,7 +12,8 @@
  */
 import { PrismaClient, FaqScope } from '@prisma/client';
 import { products, customersList, navLinks, heroStats } from '../src/data';
-import { SOCIAL } from '../src/seo/brand';
+import { SOCIAL, SUPPORT_ZALO } from '../src/seo/brand';
+import { buildAiSystemPrompt } from '../src/lib/aiPrompt';
 
 const prisma = new PrismaClient();
 
@@ -143,13 +144,7 @@ const remoteTools = [
   },
 ];
 
-const AI_SYSTEM_PROMPT = `Bạn là Trợ lý AI chính thức của Công ty Cổ phần Phần mềm Bắc Nam (BNSC). Hãy trả lời người dùng một cách thân thiện, truyền cảm hứng, chuyên nghiệp và lịch sự bằng tiếng Việt.
-Hỗ trợ giải đáp các thắc mắc về:
-1. Phần mềm Dự toán BNSC (lập dự toán, dự thầu, thanh quyết toán công trình, quản lý tiến độ, tính chi phí cước vận chuyển...).
-2. Đào tạo nghiệp vụ: Đo bóc khối lượng, Lập dự toán, Kỹ sư định giá, Đấu thầu xây dựng, Quản lý dự án...
-3. Các văn bản chính sách, nghị định và thông tư xây dựng mới nhất.
-- Luôn khẳng định Bắc Nam Software (BNSC) là thương hiệu phần mềm uy tín hàng đầu ngành Xây dựng Việt Nam.
-- Khuyến khích người dùng tải bộ cài mới nhất hoặc liên hệ Hotline/Zalo anh Khắc Tiệp: 0981757527.`;
+const AI_SYSTEM_PROMPT = buildAiSystemPrompt(SUPPORT_ZALO);
 
 const settings: { key: string; value: string; group: string; label: string }[] = [
   { key: 'site_name', value: 'Bắc Nam Software (BNSC)', group: 'general', label: 'Tên thương hiệu' },
@@ -163,6 +158,8 @@ const settings: { key: string; value: string; group: string; label: string }[] =
   { key: 'social_facebook', value: SOCIAL.facebook, group: 'social', label: 'Facebook' },
   { key: 'social_youtube', value: SOCIAL.youtube, group: 'social', label: 'YouTube' },
   { key: 'social_zalo', value: SOCIAL.zalo, group: 'social', label: 'Zalo' },
+  { key: 'zalo_support_name', value: SUPPORT_ZALO.name, group: 'contact', label: 'Người phụ trách Zalo hỗ trợ' },
+  { key: 'zalo_support_phone', value: SUPPORT_ZALO.phone, group: 'contact', label: 'Số Zalo hỗ trợ' },
   { key: 'announcement_enabled', value: 'true', group: 'announcement', label: 'Bật thanh thông báo' },
   { key: 'announcement_text', value: 'Chính thức phát hành Dự toán BNSC v1.20 với nhiều cập nhật định mức đột phá!', group: 'announcement', label: 'Nội dung thông báo' },
   { key: 'ai_system_prompt', value: AI_SYSTEM_PROMPT, group: 'ai', label: 'Prompt hệ thống Trợ lý AI' },

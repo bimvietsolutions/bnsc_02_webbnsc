@@ -4,7 +4,7 @@
  * mà các component đang dùng. Khi API phản hồi, dữ liệu DB thay cho fallback.
  */
 import { products as staticProducts, customersList, navLinks, heroStats } from '../data';
-import { BRAND_NAME, SOCIAL } from '../seo/brand';
+import { BRAND_NAME, SOCIAL, SUPPORT_ZALO } from '../seo/brand';
 
 // --- shapes (khớp API) -------------------------------------------------------
 export interface ApiProduct {
@@ -156,6 +156,8 @@ export const settingsFallback: Record<string, string> = {
   social_facebook: SOCIAL.facebook,
   social_youtube: SOCIAL.youtube,
   social_zalo: SOCIAL.zalo,
+  zalo_support_name: SUPPORT_ZALO.name,
+  zalo_support_phone: SUPPORT_ZALO.phone,
   business_license: '0310892095',
   announcement_enabled: 'true',
   announcement_text: 'Chính thức phát hành Dự toán BNSC v1.20 với nhiều cập nhật định mức đột phá!',

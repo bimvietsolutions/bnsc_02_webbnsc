@@ -25,6 +25,8 @@ export function useContactInfo() {
   const hotline = s('hotline_primary', settingsFallback.hotline_primary);
   const hotlineSecondary = s('hotline_secondary', settingsFallback.hotline_secondary);
   const email = s('email', settingsFallback.email);
+  const zaloName = s('zalo_support_name', settingsFallback.zalo_support_name);
+  const zaloPhone = s('zalo_support_phone', settingsFallback.zalo_support_phone);
 
   return {
     hotline,
@@ -35,6 +37,9 @@ export function useContactInfo() {
     hotlineSecondaryDisplay: formatPhone(hotlineSecondary),
     email,
     emailHref: `mailto:${email}`,
+    zaloName,
+    zaloPhone,
+    zaloHref: `https://zalo.me/${zaloPhone}`,
     /** Truy cập các key khác của settings mà không cần gọi API lần nữa. */
     get: s,
   };
