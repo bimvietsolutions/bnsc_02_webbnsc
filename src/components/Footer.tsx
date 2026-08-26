@@ -111,7 +111,7 @@ export default function Footer() {
             
             {/* Copyright notes */}
             <div className="text-xs text-gray-500 text-center md:text-left leading-normal">
-              <p>&copy; {currentYear} Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC). Bảo lưu mọi quyền.</p>
+              <p>&copy; {currentYear} {s('company_legal_name', settingsFallback.company_legal_name)}. Bảo lưu mọi quyền.</p>
               <p className="mt-1">Giấy phép đăng ký kinh doanh số: {s('business_license', settingsFallback.business_license)} cấp bởi Sở Kế hoạch và Đầu tư TP.HCM.</p>
             </div>
 

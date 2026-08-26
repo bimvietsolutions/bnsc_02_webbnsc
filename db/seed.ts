@@ -12,7 +12,7 @@
  */
 import { PrismaClient, FaqScope } from '@prisma/client';
 import { products, customersList, navLinks, heroStats } from '../src/data';
-import { SOCIAL, SUPPORT_ZALO } from '../src/seo/brand';
+import { HOTLINE, LEGAL_NAME, SOCIAL, SUPPORT_ZALO } from '../src/seo/brand';
 import { buildAiSystemPrompt } from '../src/lib/aiPrompt';
 
 const prisma = new PrismaClient();
@@ -35,10 +35,6 @@ const heroSlides = [
   {
     imageUrl: '/uploads/hero/training_lamdong.png',
     caption: 'SXD LÂM ĐỒNG: Đào tạo & tập huấn nghiệp vụ phần mềm Dự toán BNSC mới nhất',
-  },
-  {
-    imageUrl: '/img/hero-khanh-hoa.jpg',
-    caption: 'SXD KHÁNH HÒA: Ứng dụng phổ biến BNSC lập dự toán công trình giao thông cấp bách',
   },
 ];
 
@@ -119,8 +115,8 @@ const supportFaqs = [
 ];
 
 const supportStaff = [
-  { name: 'Kỹ sư Hoàng Lâm', phone: '0966966455', role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
-  { name: 'Kỹ sư Quốc Khánh', phone: '0981757527', role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
+  { name: 'Kỹ sư Hoàng Lâm', phone: HOTLINE, role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
+  { name: 'Kỹ sư Quốc Khánh', phone: HOTLINE, role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
   { name: 'Kỹ sư Minh Đức', phone: '0903310052', role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
 ];
 
@@ -149,9 +145,9 @@ const AI_SYSTEM_PROMPT = buildAiSystemPrompt(SUPPORT_ZALO);
 const settings: { key: string; value: string; group: string; label: string }[] = [
   { key: 'site_name', value: 'Bắc Nam Software (BNSC)', group: 'general', label: 'Tên thương hiệu' },
   { key: 'software_version', value: 'v1.20', group: 'general', label: 'Phiên bản phần mềm' },
-  { key: 'company_legal_name', value: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC)', group: 'general', label: 'Tên pháp lý' },
+  { key: 'company_legal_name', value: LEGAL_NAME, group: 'general', label: 'Tên pháp lý' },
   { key: 'business_license', value: '0310892095', group: 'general', label: 'Giấy phép ĐKKD' },
-  { key: 'hotline_primary', value: '0966966455', group: 'contact', label: 'Hotline chính' },
+  { key: 'hotline_primary', value: HOTLINE, group: 'contact', label: 'Hotline chính' },
   { key: 'hotline_secondary', value: '02866678995', group: 'contact', label: 'Hotline phụ' },
   { key: 'email', value: 'contact@bacnam.com.vn', group: 'contact', label: 'Email' },
   { key: 'address', value: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh', group: 'contact', label: 'Địa chỉ' },

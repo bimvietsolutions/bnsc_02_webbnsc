@@ -30,6 +30,9 @@ export const BRAND_NAME = 'Bắc Nam Software (BNSC)';
 /** Tên rút gọn dùng trong UI (footer, wordmark một dòng). */
 export const BRAND_SHORT_NAME = 'Bắc Nam Software';
 
+/** Tên pháp lý đầy đủ (chân trang, JSON-LD, khóa cấu hình company_legal_name). */
+export const LEGAL_NAME = 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC)';
+
 /** Tên hiển thị cạnh logo: dòng trên / dòng dưới. */
 export const BRAND_WORDMARK = { primary: 'Bắc Nam', secondary: 'Software' } as const;
 
@@ -57,8 +60,15 @@ export const THEME_COLOR = '#0B2545';
  * trang chủ nền tảng chứ không ra trang công ty, và JSON-LD gửi Google 3 URL
  * rác. Link thật vốn chỉ nằm trong FloatingActions.tsx.
  */
+/**
+ * Số điện thoại duy nhất của BNSC: vừa là hotline, vừa là số Zalo hỗ trợ, vừa
+ * là số của cả hai máy nhánh trong danh sách nhân sự hỗ trợ. Trước đây website
+ * lưu hành song song 0966965075, 0966966455 và 0981757527.
+ */
+export const HOTLINE = '0966966455';
+
 /** Người phụ trách kênh Zalo hỗ trợ (mặc định; admin sửa được trong Cấu hình site). */
-export const SUPPORT_ZALO = { name: 'Khắc Tiệp', phone: '0981757527' } as const;
+export const SUPPORT_ZALO = { name: 'Khắc Tiệp', phone: HOTLINE } as const;
 
 export const SOCIAL = {
   facebook: 'https://www.facebook.com/bacnam.com.vn/',

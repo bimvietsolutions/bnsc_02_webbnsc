@@ -14,6 +14,8 @@ import {
   DEFAULT_TITLE,
   LANG,
   LOCALE,
+  HOTLINE,
+  LEGAL_NAME,
   LOGO_PATH,
   SOCIAL,
   TITLE_TEMPLATE,
@@ -52,9 +54,9 @@ export const siteConfig = {
   twitterHandle: '@bacnamsoftware',
   organization: {
     name: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam',
-    legalName: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC)',
+    legalName: LEGAL_NAME,
     logo: `${SITE_URL}${LOGO_PATH}`,
-    phone: '+84966966455',
+    phone: `+84${HOTLINE.replace(/^0/, '')}`,
     email: 'contact@bacnam.com.vn',
     address: {
       street: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1',
