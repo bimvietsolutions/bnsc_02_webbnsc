@@ -109,11 +109,6 @@ export const resources: Record<string, ResourceCfg> = {
     searchFields: ['from', 'to'],
   },
 
-  // ----------------------- bảng cũ (giữ tới khi cutover) --------------------
-  'news-categories': { delegate: () => prisma.newsCategory, orderBy: bySort },
-  news: { delegate: () => prisma.newsArticle, orderBy: [{ id: 'desc' }], include: { category: true } },
-  'library-categories': { delegate: () => prisma.libraryCategory, orderBy: bySort },
-  library: { delegate: () => prisma.libraryArticle, orderBy: [{ id: 'desc' }], include: { category: true } },
 
   customers: { delegate: () => prisma.customer, orderBy: bySort, searchFields: ['name'] },
   'consulting-services': { delegate: () => prisma.consultingService, orderBy: bySort, searchFields: ['title'] },

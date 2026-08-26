@@ -17,29 +17,6 @@ export interface ApiProduct {
   ctaText: string;
   iconName: string;
 }
-export interface ApiNews {
-  id: number;
-  slug: string;
-  title: string;
-  excerpt: string;
-  contentBody: string;
-  imageUrl?: string | null;
-  category: string;
-  date: string;
-  views: number;
-}
-export interface ApiLibrary {
-  id: number;
-  slug: string;
-  title: string;
-  summary: string;
-  content?: string | null;
-  imageUrl?: string | null;
-  author?: string | null;
-  category: string;
-  date: string;
-  views: number;
-}
 export interface ApiCourse {
   slug: string;
   title: string;
@@ -87,37 +64,6 @@ export interface ApiNavLink {
 }
 
 // --- mappers: DB record -> shape component ----------------------------------
-export const mapNews = (rows: any[]): ApiNews[] =>
-  rows.map((r) => ({
-    id: r.id,
-    slug: r.slug,
-    title: r.title,
-    excerpt: r.excerpt,
-    contentBody: r.contentBody,
-    imageUrl: r.imageUrl,
-    category: typeof r.category === 'object' && r.category ? r.category.name : r.category,
-    date: r.dateText ?? r.date ?? '',
-    views: r.views ?? 0,
-  }));
-
-export const mapNewsOne = (r: any): ApiNews | null => (r ? mapNews([r])[0] : null);
-
-export const mapLibrary = (rows: any[]): ApiLibrary[] =>
-  rows.map((r) => ({
-    id: r.id,
-    slug: r.slug,
-    title: r.title,
-    summary: r.summary,
-    content: r.content,
-    imageUrl: r.imageUrl,
-    author: r.author,
-    category: typeof r.category === 'object' && r.category ? r.category.name : r.category,
-    date: r.dateText ?? r.date ?? '',
-    views: r.views ?? 0,
-  }));
-
-export const mapLibraryOne = (r: any): ApiLibrary | null => (r ? mapLibrary([r])[0] : null);
-
 export const mapProducts = (rows: any[]): ApiProduct[] =>
   rows.map((r) => ({
     id: r.slug ?? r.id,
@@ -132,12 +78,6 @@ export const mapProducts = (rows: any[]): ApiProduct[] =>
   }));
 
 // --- fallbacks (chỉ dùng khi API lỗi) ----------------------------------------
-// Tin tức & thư viện KHÔNG có fallback tĩnh: nội dung thật nằm ở CSDL (bảng
-// articles). Trả mảng rỗng để component hiện trạng thái trống thay vì hiển thị
-// bài giả với slug đã chết.
-export const newsFallback: ApiNews[] = [];
-export const libraryFallback: ApiLibrary[] = [];
-
 export const productsFallback: ApiProduct[] = mapProducts(staticProducts as any[]);
 
 
