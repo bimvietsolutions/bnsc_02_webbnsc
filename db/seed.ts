@@ -12,6 +12,7 @@
  */
 import { PrismaClient, FaqScope } from '@prisma/client';
 import { products, customersList, navLinks, heroStats } from '../src/data';
+import { SOCIAL } from '../src/seo/brand';
 
 const prisma = new PrismaClient();
 
@@ -159,9 +160,9 @@ const settings: { key: string; value: string; group: string; label: string }[] =
   { key: 'hotline_secondary', value: '02866678995', group: 'contact', label: 'Hotline phụ' },
   { key: 'email', value: 'contact@bacnam.com.vn', group: 'contact', label: 'Email' },
   { key: 'address', value: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh', group: 'contact', label: 'Địa chỉ' },
-  { key: 'social_facebook', value: 'https://facebook.com', group: 'social', label: 'Facebook' },
-  { key: 'social_youtube', value: 'https://youtube.com', group: 'social', label: 'YouTube' },
-  { key: 'social_zalo', value: 'https://zalo.me', group: 'social', label: 'Zalo' },
+  { key: 'social_facebook', value: SOCIAL.facebook, group: 'social', label: 'Facebook' },
+  { key: 'social_youtube', value: SOCIAL.youtube, group: 'social', label: 'YouTube' },
+  { key: 'social_zalo', value: SOCIAL.zalo, group: 'social', label: 'Zalo' },
   { key: 'announcement_enabled', value: 'true', group: 'announcement', label: 'Bật thanh thông báo' },
   { key: 'announcement_text', value: 'Chính thức phát hành Dự toán BNSC v1.20 với nhiều cập nhật định mức đột phá!', group: 'announcement', label: 'Nội dung thông báo' },
   { key: 'ai_system_prompt', value: AI_SYSTEM_PROMPT, group: 'ai', label: 'Prompt hệ thống Trợ lý AI' },

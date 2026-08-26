@@ -15,6 +15,7 @@ import {
   LANG,
   LOCALE,
   LOGO_PATH,
+  SOCIAL,
   TITLE_TEMPLATE,
 } from './brand';
 
@@ -60,7 +61,7 @@ export const siteConfig = {
       city: 'TP. Hồ Chí Minh',
       country: 'VN',
     },
-    sameAs: ['https://facebook.com', 'https://youtube.com', 'https://zalo.me'],
+    sameAs: [SOCIAL.facebook, SOCIAL.youtube, SOCIAL.zalo],
   },
 } as const;
 

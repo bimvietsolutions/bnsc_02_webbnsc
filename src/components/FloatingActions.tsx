@@ -14,6 +14,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useContactInfo } from '../lib/contact';
+import { SOCIAL } from '../seo/brand';
 
 interface Message {
   role: 'user' | 'model';
@@ -152,7 +153,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
       >
         {/* Facebook Squircle */}
         <a 
-          href="https://www.facebook.com/bacnam.com.vn/" 
+          href={SOCIAL.facebook} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-[#1877F2]/90 border border-white/[0.08] hover:border-[#1877F2]/35 flex items-center justify-center text-slate-300 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-[#1877F2]/20 cursor-pointer"
@@ -166,7 +167,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
 
         {/* Youtube Squircle */}
         <a 
-          href="https://www.youtube.com/c/DutoanBNSC/videos" 
+          href={`${SOCIAL.youtube}/videos`} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-[#FF0000]/90 border border-white/[0.08] hover:border-[#FF0000]/30 flex items-center justify-center text-slate-300 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-[#FF0000]/20 cursor-pointer"
@@ -180,7 +181,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
 
         {/* Messenger Squircle */}
         <a 
-          href="https://m.me/100027194902779" 
+          href={SOCIAL.messenger} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-[#00B2FF]/90 border border-white/[0.08] hover:border-[#00B2FF]/30 flex items-center justify-center text-slate-300 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-[#00B2FF]/20 cursor-pointer"
@@ -194,7 +195,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
 
         {/* Zalo Premium Squircle */}
         <a 
-          href="https://zalo.me/0981757527" 
+          href={SOCIAL.zalo} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-sky-500 border border-white/[0.08] hover:border-sky-400/30 flex items-center justify-center text-slate-200 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-sky-500/20 cursor-pointer text-center"

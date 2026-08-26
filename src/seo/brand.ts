@@ -50,5 +50,20 @@ export const OG_DESCRIPTION =
 /** Màu thanh trình duyệt trên mobile. */
 export const THEME_COLOR = '#0B2545';
 
+/**
+ * Kênh mạng xã hội chính thức. Trước đây settingsFallback, db/seed.ts và
+ * siteConfig.sameAs đều ghi placeholder "https://facebook.com" /
+ * "https://youtube.com" / "https://zalo.me" — tức 3 nút ở chân trang bấm vào ra
+ * trang chủ nền tảng chứ không ra trang công ty, và JSON-LD gửi Google 3 URL
+ * rác. Link thật vốn chỉ nằm trong FloatingActions.tsx.
+ */
+export const SOCIAL = {
+  facebook: 'https://www.facebook.com/bacnam.com.vn/',
+  /** Trang kênh (dùng cho sameAs). Tab video: `${SOCIAL.youtube}/videos`. */
+  youtube: 'https://www.youtube.com/c/DutoanBNSC',
+  messenger: 'https://m.me/100027194902779',
+  zalo: 'https://zalo.me/0981757527',
+} as const;
+
 export const LOCALE = 'vi_VN';
 export const LANG = 'vi';
