@@ -4,6 +4,7 @@
  * mà các component đang dùng. Khi API phản hồi, dữ liệu DB thay cho fallback.
  */
 import { products as staticProducts, customersList, navLinks, heroStats } from '../data';
+import { BRAND_NAME } from '../seo/brand';
 
 // --- shapes (khớp API) -------------------------------------------------------
 export interface ApiProduct {
@@ -146,9 +147,9 @@ export const navFallback: ApiNavLink[] = navLinks.map((l) => {
 });
 
 export const settingsFallback: Record<string, string> = {
-  site_name: 'Bắc Nam Software (BNSC)',
+  site_name: BRAND_NAME,
   software_version: 'v1.20',
-  hotline_primary: '0966965075',
+  hotline_primary: '0966966455',
   hotline_secondary: '02866678995',
   email: 'contact@bacnam.com.vn',
   address: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh',

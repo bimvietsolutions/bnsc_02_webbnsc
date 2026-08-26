@@ -20,6 +20,8 @@ import {
 import Seo from '../seo/Seo';
 import { useApi } from '../lib/api';
 import { supportFallback, faqsSupportFallback } from '../lib/publicData';
+import { useContactInfo } from '../lib/contact';
+import { LOGO_ALT, LOGO_PATH } from '../seo/brand';
 
 export default function TechnicalSupportPage() {
   const navigate = useNavigate();
@@ -51,6 +53,7 @@ export default function TechnicalSupportPage() {
 
   const { data: support } = useApi('/api/public/support', supportFallback);
   const { data: faqRows } = useApi('/api/public/faqs?scope=SUPPORT', faqsSupportFallback);
+  const { hotlineDisplay, hotlineHref, emailHref } = useContactInfo();
   const supportStaff = support.staff;
   const remoteTools = support.tools.map((t) => ({ ...t, desc: t.description }));
   const faqItems = faqRows.map((f) => ({ q: f.question, a: f.answer }));
@@ -88,8 +91,8 @@ export default function TechnicalSupportPage() {
             </button>
             <div className="flex items-center gap-3">
               <img 
-                src="/brand/logo.png" 
-                alt="Logo" 
+                src={LOGO_PATH} 
+                alt={LOGO_ALT} 
                 className="w-9 h-9 object-contain"
               />
               <div className="hidden sm:block text-left">
@@ -102,10 +105,12 @@ export default function TechnicalSupportPage() {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex flex-col items-end text-right">
               <span className="text-[11px] text-slate-400">Hỗ trợ kỹ thuật qua Hotline</span>
-              <span className="text-sm font-bold text-[#F5A623] hover:underline">0966.966.455</span>
+              <a href={hotlineHref} className="text-sm font-bold text-[#F5A623] hover:underline">
+                {hotlineDisplay}
+              </a>
             </div>
             <a 
-              href="mailto:contact@bacnam.com.vn" 
+              href={emailHref}
               className="text-xs bg-white/5 border border-white/[0.08] text-slate-300 hover:text-white px-3.5 py-1.8 rounded-xl hover:bg-white/10 transition-all font-medium"
             >
               Gửi Ticket Email

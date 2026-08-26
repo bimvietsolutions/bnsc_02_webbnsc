@@ -13,6 +13,7 @@ import {
   Loader2,
   Trash2
 } from 'lucide-react';
+import { useContactInfo } from '../lib/contact';
 
 interface Message {
   role: 'user' | 'model';
@@ -34,6 +35,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
   const [history, setHistory] = useState<Message[]>([]);
   
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { hotlineDisplay } = useContactInfo();
 
   const initialMessage = 'Xin chào quý khách! Tôi là Trợ lý AI của **Bắc Nam Software (BNSC)**. Chúc quý khách một ngày thành công và nhiều niềm vui.\n\nTôi có thể hỗ trợ quý khách về bộ cài phần mềm Dự toán BNSC mới nhất, khóa học đo bóc khối lượng - định giá xây dựng, hoặc các giải giải đáp văn bản thông tư nhà nước. Quý khách đang quan tâm nội dung nào ạ?';
 
@@ -396,7 +398,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
                 </button>
               </form>
               <div className="flex justify-between items-center mt-2 px-1 text-[10px] text-slate-400 font-medium">
-                <span className="font-bold text-amber-500 tracking-wider">Hotline: 0966966455</span>
+                <span className="font-bold text-amber-500 tracking-wider">Hotline: {hotlineDisplay}</span>
                 <span className="flex items-center gap-1 font-mono">
                   <CornerDownLeft className="w-3 h-3 text-slate-500" /> Enter
                 </span>

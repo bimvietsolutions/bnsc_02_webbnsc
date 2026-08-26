@@ -155,7 +155,7 @@ const settings: { key: string; value: string; group: string; label: string }[] =
   { key: 'software_version', value: 'v1.20', group: 'general', label: 'Phiên bản phần mềm' },
   { key: 'company_legal_name', value: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC)', group: 'general', label: 'Tên pháp lý' },
   { key: 'business_license', value: '0310892095', group: 'general', label: 'Giấy phép ĐKKD' },
-  { key: 'hotline_primary', value: '0966965075', group: 'contact', label: 'Hotline chính' },
+  { key: 'hotline_primary', value: '0966966455', group: 'contact', label: 'Hotline chính' },
   { key: 'hotline_secondary', value: '02866678995', group: 'contact', label: 'Hotline phụ' },
   { key: 'email', value: 'contact@bacnam.com.vn', group: 'contact', label: 'Email' },
   { key: 'address', value: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh', group: 'contact', label: 'Địa chỉ' },
