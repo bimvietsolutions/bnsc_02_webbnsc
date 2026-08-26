@@ -87,7 +87,7 @@ export const heroFallback: { slides: ApiHeroSlide[]; stats: { value: string; lab
   slides: [
     { imageUrl: '/uploads/hero/meeting_gialai.png', caption: 'SXD GIA LAI: Công bố Đơn giá NC & Giá CM năm 2025 do BNSC tư vấn thực hiện' },
     { imageUrl: '/uploads/hero/training_lamdong.png', caption: 'SXD LÂM ĐỒNG: Đào tạo & tập huấn nghiệp vụ phần mềm Dự toán BNSC mới nhất' },
-    { imageUrl: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=800&auto=format&fit=crop', caption: 'SXD KHÁNH HÒA: Ứng dụng phổ biến BNSC lập dự toán công trình giao thông cấp bách' },
+    { imageUrl: '/img/hero-khanh-hoa.jpg', caption: 'SXD KHÁNH HÒA: Ứng dụng phổ biến BNSC lập dự toán công trình giao thông cấp bách' },
   ],
   stats: heroStats.map((s) => ({ value: s.value, label: s.label })),
 };

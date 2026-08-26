@@ -142,7 +142,7 @@ export default function Hero() {
                   {/* Article Thumbnail Image */}
                   <div className="w-24 h-[76px] sm:w-[104px] sm:h-20 shrink-0 rounded-xl overflow-hidden border border-white/[0.08] relative group-hover:border-[#10B981]/35 transition-colors duration-300">
                     <img 
-                      src="https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=160&h=120&q=80" 
+                      src="/img/tin-van-chuyen.jpg" 
                       alt="2.76 Tính chi phí vận chuyển" 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
@@ -167,12 +167,12 @@ export default function Hero() {
 
                 <div className="mt-4 pt-3.5 border-t border-white/[0.04] flex items-center justify-between text-xs text-slate-400 font-medium flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <img 
-                      src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&h=60&q=80" 
-                      alt="Khắc Tiệp" 
-                      className="w-5 h-5 rounded-full object-cover border border-white/10"
-                      referrerPolicy="no-referrer"
-                    />
+                    <span
+                      aria-hidden="true"
+                      className="w-5 h-5 rounded-full border border-white/10 bg-[#1B5FA8] text-white text-[8px] font-bold flex items-center justify-center shrink-0"
+                    >
+                      KT
+                    </span>
                     <span className="text-white/90">Khắc Tiệp</span>
                     <span className="text-slate-600">•</span>
                     <span className="text-slate-400">14/01/20</span>
@@ -196,7 +196,7 @@ export default function Hero() {
                   {/* Article Thumbnail Image */}
                   <div className="w-24 h-[76px] sm:w-[104px] sm:h-20 shrink-0 rounded-xl overflow-hidden border border-white/[0.08] relative group-hover:border-[#F5A623]/35 transition-colors duration-300">
                     <img 
-                      src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=160&h=120&q=80" 
+                      src="/img/tin-phien-ban.jpg" 
                       alt="1.20 DỰ TOÁN BNSC" 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
@@ -221,12 +221,12 @@ export default function Hero() {
 
                 <div className="mt-4 pt-3.5 border-t border-white/[0.04] flex items-center justify-between text-xs text-slate-400 font-medium flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <img 
-                      src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=60&h=60&q=80" 
-                      alt="Khắc Tiệp" 
-                      className="w-5 h-5 rounded-full object-cover border border-white/10"
-                      referrerPolicy="no-referrer"
-                    />
+                    <span
+                      aria-hidden="true"
+                      className="w-5 h-5 rounded-full border border-white/10 bg-[#1B5FA8] text-white text-[8px] font-bold flex items-center justify-center shrink-0"
+                    >
+                      KT
+                    </span>
                     <span className="text-white/90">Khắc Tiệp</span>
                     <span className="text-slate-600">•</span>
                     <span className="text-slate-400">13/06/25</span>
