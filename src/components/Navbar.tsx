@@ -4,6 +4,7 @@ import { Menu, X, User, ArrowRight, ShieldCheck, ChevronDown } from 'lucide-reac
 import { scrollToId } from '../utils/scroll';
 import { useApi } from '../lib/api';
 import { navFallback } from '../lib/publicData';
+import { BRAND_WORDMARK, LOGO_ALT, LOGO_PATH } from '../seo/brand';
 
 interface NavbarProps {
   onDownloadClick: () => void;
@@ -91,18 +92,18 @@ export default function Navbar({ onDownloadClick, onLoginClick, onRegisterClick 
           >
             <div className="relative flex items-center justify-center w-11 h-11 transition-transform duration-300 group-hover:scale-105 shrink-0">
               <img 
-                src="/brand/logo.png" 
-                alt="Bac Nam Logo" 
+                src={LOGO_PATH} 
+                alt={LOGO_ALT} 
                 className="w-full h-full object-contain"
               />
             </div>
             
             <div className="flex flex-col">
               <span className="text-[#1A1A18] font-medium text-lg tracking-wide leading-none uppercase group-hover:text-[#E09413] transition-colors font-sans">
-                Bắc Nam
+                {BRAND_WORDMARK.primary}
               </span>
               <span className="text-[10px] text-slate-500 tracking-widest font-medium uppercase mt-1.5 group-hover:text-slate-800 transition-colors font-sans leading-none">
-                SOFTWARE
+                {BRAND_WORDMARK.secondary}
               </span>
             </div>
           </a>

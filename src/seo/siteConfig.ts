@@ -2,29 +2,39 @@
  * seo/siteConfig.ts
  * Cấu hình SEO dùng chung cho toàn site. Đổi `siteUrl` cho đúng tên miền
  * production (hoặc đặt biến môi trường VITE_SITE_URL khi build).
+ *
+ * Mọi hằng số nhận diện thương hiệu (logo, favicon, tên, mô tả, màu) nằm ở
+ * `./brand` — tệp đó là nguồn duy nhất và cũng được vite.config.ts dùng để bơm
+ * vào index.html.
  */
+import {
+  BRAND_NAME,
+  DEFAULT_DESCRIPTION,
+  DEFAULT_SITE_URL,
+  DEFAULT_TITLE,
+  LANG,
+  LOCALE,
+  HOTLINE,
+  LEGAL_NAME,
+  LOGO_PATH,
+  SOCIAL,
+  TITLE_TEMPLATE,
+} from './brand';
 
 const SITE_URL =
-  (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || 'https://bacnam.com.vn';
+  (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') || DEFAULT_SITE_URL;
 
-/**
- * Logo nằm trong repo tại static/brand/logo.png nên đi cùng bản build.
- * Trước đây mọi chỗ đều trỏ tới https://bacnam.com.vn/uploads/logo/... của
- * hosting cũ — ngày tắt hosting đó là logo hỏng toàn site, và đường dẫn
- * /uploads/logo/ cũng không tồn tại trên VPS mới.
- */
-export const LOGO_PATH = '/brand/logo.png';
+export { FAVICON_PATH, LOGO_ALT, LOGO_PATH } from './brand';
 
 export const siteConfig = {
   /** Tên miền chính (không có dấu "/" ở cuối). */
   siteUrl: SITE_URL,
-  siteName: 'Bắc Nam Software (BNSC)',
+  siteName: BRAND_NAME,
   /** Tiêu đề mặc định / trang chủ. */
-  defaultTitle: 'Phần mềm Dự toán BNSC | Bắc Nam Software (BNSC)',
+  defaultTitle: DEFAULT_TITLE,
   /** Mẫu tiêu đề cho các trang con: "%s | Bắc Nam Software (BNSC)". */
-  titleTemplate: '%s | Bắc Nam Software (BNSC)',
-  defaultDescription:
-    'Phần mềm Dự toán BNSC – giải pháp lập, thẩm định dự toán, dự thầu và thanh quyết toán công trình hàng đầu Việt Nam. Cập nhật đầy đủ định mức, đơn giá 63 tỉnh thành theo Thông tư Bộ Xây dựng.',
+  titleTemplate: TITLE_TEMPLATE,
+  defaultDescription: DEFAULT_DESCRIPTION,
   keywords: [
     'phần mềm dự toán',
     'dự toán BNSC',
@@ -37,23 +47,23 @@ export const siteConfig = {
     'đo bóc khối lượng',
     'phần mềm xây dựng',
   ],
-  locale: 'vi_VN',
-  lang: 'vi',
+  locale: LOCALE,
+  lang: LANG,
   /** Ảnh chia sẻ mạng xã hội mặc định (nên là ảnh tuyệt đối 1200x630). */
   defaultImage: `${SITE_URL}${LOGO_PATH}`,
   twitterHandle: '@bacnamsoftware',
   organization: {
     name: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam',
-    legalName: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC)',
+    legalName: LEGAL_NAME,
     logo: `${SITE_URL}${LOGO_PATH}`,
-    phone: '+84966965075',
+    phone: `+84${HOTLINE.replace(/^0/, '')}`,
     email: 'contact@bacnam.com.vn',
     address: {
       street: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1',
       city: 'TP. Hồ Chí Minh',
       country: 'VN',
     },
-    sameAs: ['https://facebook.com', 'https://youtube.com', 'https://zalo.me'],
+    sameAs: [SOCIAL.facebook, SOCIAL.youtube, SOCIAL.zalo],
   },
 } as const;
 

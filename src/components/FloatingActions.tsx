@@ -13,6 +13,8 @@ import {
   Loader2,
   Trash2
 } from 'lucide-react';
+import { useContactInfo } from '../lib/contact';
+import { SOCIAL } from '../seo/brand';
 
 interface Message {
   role: 'user' | 'model';
@@ -34,6 +36,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
   const [history, setHistory] = useState<Message[]>([]);
   
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { hotlineDisplay, zaloName, zaloPhone, zaloHref } = useContactInfo();
 
   const initialMessage = 'Xin chào quý khách! Tôi là Trợ lý AI của **Bắc Nam Software (BNSC)**. Chúc quý khách một ngày thành công và nhiều niềm vui.\n\nTôi có thể hỗ trợ quý khách về bộ cài phần mềm Dự toán BNSC mới nhất, khóa học đo bóc khối lượng - định giá xây dựng, hoặc các giải giải đáp văn bản thông tư nhà nước. Quý khách đang quan tâm nội dung nào ạ?';
 
@@ -92,7 +95,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
     } catch (error: any) {
       setHistory(prev => [...prev, { 
         role: 'model', 
-        text: '⚠️ **Hệ thống AI bận:** Kết nối mạng bị gián đoạn. Anh/chị vui lòng liên hệ ngay hỗ trợ trực tuyến qua hotline **0981757527** để được cài đặt và chuyển giao phần mềm lập tức!' 
+        text: `⚠️ **Hệ thống AI bận:** Kết nối mạng bị gián đoạn. Anh/chị vui lòng liên hệ ngay hỗ trợ trực tuyến qua hotline **${hotlineDisplay}** để được cài đặt và chuyển giao phần mềm lập tức!` 
       }]);
     } finally {
       setLoading(false);
@@ -150,7 +153,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
       >
         {/* Facebook Squircle */}
         <a 
-          href="https://www.facebook.com/bacnam.com.vn/" 
+          href={SOCIAL.facebook} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-[#1877F2]/90 border border-white/[0.08] hover:border-[#1877F2]/35 flex items-center justify-center text-slate-300 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-[#1877F2]/20 cursor-pointer"
@@ -164,7 +167,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
 
         {/* Youtube Squircle */}
         <a 
-          href="https://www.youtube.com/c/DutoanBNSC/videos" 
+          href={`${SOCIAL.youtube}/videos`} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-[#FF0000]/90 border border-white/[0.08] hover:border-[#FF0000]/30 flex items-center justify-center text-slate-300 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-[#FF0000]/20 cursor-pointer"
@@ -178,7 +181,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
 
         {/* Messenger Squircle */}
         <a 
-          href="https://m.me/100027194902779" 
+          href={SOCIAL.messenger} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-[#00B2FF]/90 border border-white/[0.08] hover:border-[#00B2FF]/30 flex items-center justify-center text-slate-300 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-[#00B2FF]/20 cursor-pointer"
@@ -192,15 +195,15 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
 
         {/* Zalo Premium Squircle */}
         <a 
-          href="https://zalo.me/0981757527" 
+          href={zaloHref} 
           target="_blank" 
           rel="noopener noreferrer"
           className="group relative w-12 h-12 rounded-2xl bg-slate-900/85 hover:bg-sky-500 border border-white/[0.08] hover:border-sky-400/30 flex items-center justify-center text-slate-200 hover:text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-md hover:shadow-sky-500/20 cursor-pointer text-center"
-          aria-label="Zalo Khắc Tiệp BNSC"
+          aria-label={`Zalo ${zaloName} BNSC`}
         >
           <ZaloIcon />
           <span className="absolute right-14 scale-0 group-hover:scale-100 origin-right transition-all duration-200 bg-slate-950 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-white/5 shadow-xl whitespace-nowrap">
-            Zalo Khắc Tiệp: 0981757527
+            Zalo {zaloName}: {zaloPhone}
           </span>
         </a>
 
@@ -396,7 +399,7 @@ export default function FloatingActions({ onStartTechnicalSupport }: FloatingAct
                 </button>
               </form>
               <div className="flex justify-between items-center mt-2 px-1 text-[10px] text-slate-400 font-medium">
-                <span className="font-bold text-amber-500 tracking-wider">Hotline: 0966966455</span>
+                <span className="font-bold text-amber-500 tracking-wider">Hotline: {hotlineDisplay}</span>
                 <span className="flex items-center gap-1 font-mono">
                   <CornerDownLeft className="w-3 h-3 text-slate-500" /> Enter
                 </span>

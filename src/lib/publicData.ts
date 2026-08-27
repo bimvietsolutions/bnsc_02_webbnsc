@@ -4,6 +4,8 @@
  * mà các component đang dùng. Khi API phản hồi, dữ liệu DB thay cho fallback.
  */
 import { products as staticProducts, customersList, navLinks, heroStats } from '../data';
+import { BRAND_NAME, HOTLINE, LEGAL_NAME, SOCIAL, SUPPORT_ZALO } from '../seo/brand';
+import type { PublicSettingKey } from './settingsKeys';
 
 // --- shapes (khớp API) -------------------------------------------------------
 export interface ApiProduct {
@@ -86,7 +88,6 @@ export const heroFallback: { slides: ApiHeroSlide[]; stats: { value: string; lab
   slides: [
     { imageUrl: '/uploads/hero/meeting_gialai.png', caption: 'SXD GIA LAI: Công bố Đơn giá NC & Giá CM năm 2025 do BNSC tư vấn thực hiện' },
     { imageUrl: '/uploads/hero/training_lamdong.png', caption: 'SXD LÂM ĐỒNG: Đào tạo & tập huấn nghiệp vụ phần mềm Dự toán BNSC mới nhất' },
-    { imageUrl: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=800&auto=format&fit=crop', caption: 'SXD KHÁNH HÒA: Ứng dụng phổ biến BNSC lập dự toán công trình giao thông cấp bách' },
   ],
   stats: heroStats.map((s) => ({ value: s.value, label: s.label })),
 };
@@ -118,9 +119,9 @@ export const faqsSupportFallback: ApiFaq[] = [
 
 export const supportFallback: { staff: ApiSupportStaff[]; tools: ApiRemoteTool[] } = {
   staff: [
-    { name: 'Kỹ sư Hoàng Lâm', phone: '0966966455', role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
-    { name: 'Kỹ sư Quốc Khánh', phone: '0981757527', role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
-    { name: 'Kỹ sư Minh Đức', phone: '0903310052', role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
+    { name: 'Kỹ sư Hoàng Lâm', phone: HOTLINE, role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
+    { name: 'Kỹ sư Quốc Khánh', phone: HOTLINE, role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
+    { name: 'Kỹ sư Minh Đức', phone: HOTLINE, role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
   ],
   tools: [
     { name: 'UltraViewer (Khuyên dùng)', description: 'Phần mềm điều khiển máy tính xa cực nhẹ, phổ biến nhất tại Việt Nam. Được đội ngũ BNSC sử dụng để cài đặt trực tiếp cho khách hàng.', version: 'v6.6 (Bản mới nhất)', url: 'https://www.ultraviewer.net/vi/download.html', realUrl: null, badge: 'Bao gồm bộ cài sửa lỗi' },
@@ -145,16 +146,19 @@ export const navFallback: ApiNavLink[] = navLinks.map((l) => {
   return { name: l.name, href: l.href };
 });
 
-export const settingsFallback: Record<string, string> = {
-  site_name: 'Bắc Nam Software (BNSC)',
+export const settingsFallback: Record<PublicSettingKey, string> = {
+  site_name: BRAND_NAME,
+  company_legal_name: LEGAL_NAME,
   software_version: 'v1.20',
-  hotline_primary: '0966965075',
+  hotline_primary: HOTLINE,
   hotline_secondary: '02866678995',
   email: 'contact@bacnam.com.vn',
   address: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh',
-  social_facebook: 'https://facebook.com',
-  social_youtube: 'https://youtube.com',
-  social_zalo: 'https://zalo.me',
+  social_facebook: SOCIAL.facebook,
+  social_youtube: SOCIAL.youtube,
+  social_zalo: SOCIAL.zalo,
+  zalo_support_name: SUPPORT_ZALO.name,
+  zalo_support_phone: SUPPORT_ZALO.phone,
   business_license: '0310892095',
   announcement_enabled: 'true',
   announcement_text: 'Chính thức phát hành Dự toán BNSC v1.20 với nhiều cập nhật định mức đột phá!',

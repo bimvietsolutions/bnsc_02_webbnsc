@@ -16,6 +16,8 @@ import {
   createNoIndexMiddleware,
 } from "./server/routes.seo";
 import { prisma } from "./server/db";
+import { buildAiSystemPrompt } from "./src/lib/aiPrompt";
+import { SUPPORT_ZALO } from "./src/seo/brand";
 
 dotenv.config();
 
@@ -26,6 +28,35 @@ process.on("unhandledRejection", (reason) => {
 process.on("uncaughtException", (err) => {
   console.error("uncaughtException:", err);
 });
+
+/**
+ * Nội dung phụ thuộc cấu hình site (`ai_system_prompt`, `zalo_support_*`) nay
+ * đọc từ CSDL để admin sửa được ở Quản trị -> Cấu hình site. Trước đây prompt
+ * Trợ lý AI và số điện thoại hỗ trợ bị gõ cứng ngay trong tệp này, nên khóa
+ * `ai_system_prompt` mà db/seed.ts nạp sẵn hoàn toàn vô tác dụng.
+ *
+ * Giá trị mặc định lấy từ src/seo/brand.ts và src/lib/aiPrompt.ts — chỉ là lưới
+ * an toàn khi CSDL thiếu khóa hoặc truy vấn lỗi.
+ */
+
+/** Đọc một khóa cấu hình, trả về fallback nếu thiếu hoặc CSDL lỗi. */
+async function getSetting(key: string, fallback: string): Promise<string> {
+  try {
+    const row = await prisma.setting.findUnique({ where: { key } });
+    return row?.value?.trim() || fallback;
+  } catch (err) {
+    console.error(`Không đọc được cấu hình "${key}":`, err);
+    return fallback;
+  }
+}
+
+/** Người phụ trách Zalo hỗ trợ, lấy từ cấu hình site. */
+async function getSupportContact(): Promise<{ name: string; phone: string }> {
+  return {
+    name: await getSetting("zalo_support_name", SUPPORT_ZALO.name),
+    phone: await getSetting("zalo_support_phone", SUPPORT_ZALO.phone),
+  };
+}
 
 async function startServer() {
   const app = express();
@@ -84,22 +115,17 @@ async function startServer() {
       }
 
       if (!ai) {
+        const support = await getSupportContact();
         return res.json({
-          text: "Xin chào! Hiện tại tính năng trả lời tự động bằng AI đang ở chế độ ngoại tuyến vì chưa tìm thấy API Key. Quý khách vui lòng liên hệ hotline/Zalo hỗ trợ trực tiếp của anh **Khắc Tiệp (0981757527)** để được phục vụ tốt nhất!"
+          text: `Xin chào! Hiện tại tính năng trả lời tự động bằng AI đang ở chế độ ngoại tuyến vì chưa tìm thấy API Key. Quý khách vui lòng liên hệ hotline/Zalo hỗ trợ trực tiếp của anh **${support.name} (${support.phone})** để được phục vụ tốt nhất!`
         });
       }
 
-      const systemInstruction = `Bạn là Trợ lý AI chính thức của Công ty Cổ phần Phần mềm Bắc Nam (BNSC). Hãy trả lời người dùng một cách thân thiện, truyền cảm hứng, chuyên nghiệp và lịch sự bằng tiếng Việt.
-Hỗ trợ giải đáp các thắc mắc về:
-1. Phần mềm Dự toán BNSC (Phần mềm lập dự toán, dự thầu, thanh quyết toán công trình, quản lý tiến độ, tính chi phí cước vận chuyển theo các định mức...).
-2. Đào tạo nghiệp vụ chuyên môn: Đo bóc khối lượng, Lập dự toán, Kỹ sư định giá, Đấu thầu xây dựng, Quản lý dự án...
-3. Các văn bản chính sách, nghị định và thông tư xây dựng mới nhất (Thông tư 12/2021/TT-BXD, Thông tư 08/2025/TT-BXD, Thông tư 70/2025/TT-BTC, các văn bản của Bộ Xây dựng).
-
-Lời khuyên cho bạn:
-- Luôn khẳng định Bắc Nam Software (BNSC) là thương hiệu phần mềm uy tín hàng đầu trong ngành Xây dựng Việt Nam.
-- Khuyến khích người dùng tải bộ cài đặt mới nhất bằng cách click nút "Tải phần mềm BNSC" trực tiếp trên màn hình hoặc liên hệ anh Khắc Tiệp (0981757527) để nhận bản quyền dùng thử.
-- Với các câu hỏi sâu về kỹ thuật, hướng dẫn cài đặt bị lỗi, hoặc báo giá lớp học, hãy khuyên người dùng liên hệ Hotline/Zalo anh Khắc Tiệp: 0981757527 để được hỗ trợ tức thì.
-- Định dạng câu trả lời gọn gàng, sử dụng các ký tự Markdown (như in đậm **, danh sách gạch đầu dòng, tiêu đề) để dễ đọc. Tránh viết những đoạn văn quá dài dòng.`;
+      const support = await getSupportContact();
+      const systemInstruction = await getSetting(
+        "ai_system_prompt",
+        buildAiSystemPrompt(support),
+      );
 
       const contents: any[] = [];
       

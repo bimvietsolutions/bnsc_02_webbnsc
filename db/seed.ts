@@ -12,6 +12,8 @@
  */
 import { PrismaClient, FaqScope } from '@prisma/client';
 import { products, customersList, navLinks, heroStats } from '../src/data';
+import { HOTLINE, LEGAL_NAME, SOCIAL, SUPPORT_ZALO } from '../src/seo/brand';
+import { buildAiSystemPrompt } from '../src/lib/aiPrompt';
 
 const prisma = new PrismaClient();
 
@@ -33,10 +35,6 @@ const heroSlides = [
   {
     imageUrl: '/uploads/hero/training_lamdong.png',
     caption: 'SXD LÂM ĐỒNG: Đào tạo & tập huấn nghiệp vụ phần mềm Dự toán BNSC mới nhất',
-  },
-  {
-    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=800&auto=format&fit=crop',
-    caption: 'SXD KHÁNH HÒA: Ứng dụng phổ biến BNSC lập dự toán công trình giao thông cấp bách',
   },
 ];
 
@@ -117,9 +115,9 @@ const supportFaqs = [
 ];
 
 const supportStaff = [
-  { name: 'Kỹ sư Hoàng Lâm', phone: '0966966455', role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
-  { name: 'Kỹ sư Quốc Khánh', phone: '0981757527', role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
-  { name: 'Kỹ sư Minh Đức', phone: '0903310052', role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
+  { name: 'Kỹ sư Hoàng Lâm', phone: HOTLINE, role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
+  { name: 'Kỹ sư Quốc Khánh', phone: HOTLINE, role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
+  { name: 'Kỹ sư Minh Đức', phone: HOTLINE, role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
 ];
 
 const remoteTools = [
@@ -142,26 +140,22 @@ const remoteTools = [
   },
 ];
 
-const AI_SYSTEM_PROMPT = `Bạn là Trợ lý AI chính thức của Công ty Cổ phần Phần mềm Bắc Nam (BNSC). Hãy trả lời người dùng một cách thân thiện, truyền cảm hứng, chuyên nghiệp và lịch sự bằng tiếng Việt.
-Hỗ trợ giải đáp các thắc mắc về:
-1. Phần mềm Dự toán BNSC (lập dự toán, dự thầu, thanh quyết toán công trình, quản lý tiến độ, tính chi phí cước vận chuyển...).
-2. Đào tạo nghiệp vụ: Đo bóc khối lượng, Lập dự toán, Kỹ sư định giá, Đấu thầu xây dựng, Quản lý dự án...
-3. Các văn bản chính sách, nghị định và thông tư xây dựng mới nhất.
-- Luôn khẳng định Bắc Nam Software (BNSC) là thương hiệu phần mềm uy tín hàng đầu ngành Xây dựng Việt Nam.
-- Khuyến khích người dùng tải bộ cài mới nhất hoặc liên hệ Hotline/Zalo anh Khắc Tiệp: 0981757527.`;
+const AI_SYSTEM_PROMPT = buildAiSystemPrompt(SUPPORT_ZALO);
 
 const settings: { key: string; value: string; group: string; label: string }[] = [
   { key: 'site_name', value: 'Bắc Nam Software (BNSC)', group: 'general', label: 'Tên thương hiệu' },
   { key: 'software_version', value: 'v1.20', group: 'general', label: 'Phiên bản phần mềm' },
-  { key: 'company_legal_name', value: 'Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC)', group: 'general', label: 'Tên pháp lý' },
+  { key: 'company_legal_name', value: LEGAL_NAME, group: 'general', label: 'Tên pháp lý' },
   { key: 'business_license', value: '0310892095', group: 'general', label: 'Giấy phép ĐKKD' },
-  { key: 'hotline_primary', value: '0966965075', group: 'contact', label: 'Hotline chính' },
+  { key: 'hotline_primary', value: HOTLINE, group: 'contact', label: 'Hotline chính' },
   { key: 'hotline_secondary', value: '02866678995', group: 'contact', label: 'Hotline phụ' },
   { key: 'email', value: 'contact@bacnam.com.vn', group: 'contact', label: 'Email' },
   { key: 'address', value: 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh', group: 'contact', label: 'Địa chỉ' },
-  { key: 'social_facebook', value: 'https://facebook.com', group: 'social', label: 'Facebook' },
-  { key: 'social_youtube', value: 'https://youtube.com', group: 'social', label: 'YouTube' },
-  { key: 'social_zalo', value: 'https://zalo.me', group: 'social', label: 'Zalo' },
+  { key: 'social_facebook', value: SOCIAL.facebook, group: 'social', label: 'Facebook' },
+  { key: 'social_youtube', value: SOCIAL.youtube, group: 'social', label: 'YouTube' },
+  { key: 'social_zalo', value: SOCIAL.zalo, group: 'social', label: 'Zalo' },
+  { key: 'zalo_support_name', value: SUPPORT_ZALO.name, group: 'contact', label: 'Người phụ trách Zalo hỗ trợ' },
+  { key: 'zalo_support_phone', value: SUPPORT_ZALO.phone, group: 'contact', label: 'Số Zalo hỗ trợ' },
   { key: 'announcement_enabled', value: 'true', group: 'announcement', label: 'Bật thanh thông báo' },
   { key: 'announcement_text', value: 'Chính thức phát hành Dự toán BNSC v1.20 với nhiều cập nhật định mức đột phá!', group: 'announcement', label: 'Nội dung thông báo' },
   { key: 'ai_system_prompt', value: AI_SYSTEM_PROMPT, group: 'ai', label: 'Prompt hệ thống Trợ lý AI' },

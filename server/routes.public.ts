@@ -8,6 +8,7 @@
 import express, { type Router, type Request, type Response, type NextFunction } from 'express';
 import { prisma } from './db';
 import { SECTION_PREFIX } from './routes.content';
+import { PUBLIC_SETTING_KEYS } from '../src/lib/settingsKeys';
 
 type Handler = (req: Request, res: Response) => Promise<unknown> | unknown;
 const ah =
@@ -21,7 +22,11 @@ export function createPublicRouter(): Router {
   router.get(
     '/settings',
     ah(async (_req, res) => {
-      const rows = await prisma.setting.findMany();
+      // Chỉ trả về các khóa nằm trong whitelist: xem src/lib/settingsKeys.ts.
+      const rows = await prisma.setting.findMany({
+        where: { key: { in: [...PUBLIC_SETTING_KEYS] } },
+        select: { key: true, value: true },
+      });
       const map: Record<string, string> = {};
       for (const s of rows) map[s.key] = s.value;
       res.json(map);

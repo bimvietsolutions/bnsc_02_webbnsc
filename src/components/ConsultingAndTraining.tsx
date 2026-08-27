@@ -3,6 +3,7 @@ import { ShieldCheck, GraduationCap, Calendar, Users, MapPin, ArrowRight, Gavel,
 import { useUiActions } from '../context/UiActions';
 import { useApi } from '../lib/api';
 import { consultingFallback, faqsHomeFallback } from '../lib/publicData';
+import { useContactInfo } from '../lib/contact';
 
 const consultIcon = (name?: string | null) => {
   switch (name) {
@@ -21,6 +22,7 @@ export default function ConsultingAndTraining() {
   // Frequently asked questions (FAQs) or consultative elements
   const [activeQuestion, setActiveQuestion] = useState<number | null>(0);
 
+  const { hotlineDisplay } = useContactInfo();
   const { data: consulting } = useApi('/api/public/consulting', consultingFallback);
   const { data: faqRows } = useApi('/api/public/faqs?scope=HOME', faqsHomeFallback);
 
@@ -120,7 +122,7 @@ export default function ConsultingAndTraining() {
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-white/10 text-xs text-gray-400 flex items-center justify-between">
-                  <span>Hotline khẩn cấp: 0966.965.075</span>
+                  <span>Hotline khẩn cấp: {hotlineDisplay}</span>
                   <a href="#footer" className="text-[#F5A623] hover:underline flex items-center gap-0.5">Đặt câu hỏi khác &rarr;</a>
                 </div>
 

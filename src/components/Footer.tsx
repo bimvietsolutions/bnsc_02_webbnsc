@@ -1,14 +1,12 @@
 import React from 'react';
 import { Phone, Mail, MapPin, Facebook, Youtube, Send, Globe, MessageCircle } from 'lucide-react';
-import { useApi, settingsGetter } from '../lib/api';
 import { settingsFallback } from '../lib/publicData';
+import { useContactInfo } from '../lib/contact';
+import { BRAND_SHORT_NAME, LOGO_ALT, LOGO_PATH } from '../seo/brand';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const { data: settings } = useApi('/api/public/settings', settingsFallback);
-  const s = settingsGetter(settings);
-  const phone = s('hotline_primary', '0966965075');
-  const email = s('email', 'contact@bacnam.com.vn');
+  const { hotlineDisplay, hotlineHref, email, emailHref, get: s } = useContactInfo();
 
   return (
     <footer id="lien-he" className="bg-[#060f1e] text-gray-300 pt-16 pb-8 border-t border-white/5">
@@ -22,14 +20,14 @@ export default function Footer() {
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-11 h-11 shrink-0">
                 <img 
-                  src="/brand/logo.png" 
-                  alt="Bac Nam Logo" 
+                  src={LOGO_PATH} 
+                  alt={LOGO_ALT} 
                   className="w-full h-full object-contain"
                 />
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-extrabold text-base tracking-wide leading-none uppercase">
-                  Bắc Nam Software
+                  {BRAND_SHORT_NAME}
                 </span>
                 <span className="text-[10px] text-gray-500 tracking-wider font-semibold uppercase mt-0.5">
                   BNSC / Định hình giá trị xây dựng
@@ -45,18 +43,18 @@ export default function Footer() {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-[#F5A623] shrink-0 mt-0.5" />
                 <span className="text-gray-300 leading-relaxed">
-                  {s('address', 'Tòa nhà Indochina, số 4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh')}
+                  {s('address', settingsFallback.address)}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-[#F5A623] shrink-0" />
-                <a href={`tel:${phone}`} className="hover:text-[#F5A623] transition-colors font-mono">
-                  {phone}
+                <a href={hotlineHref} className="hover:text-[#F5A623] transition-colors font-mono">
+                  {hotlineDisplay}
                 </a>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-[#F5A623] shrink-0" />
-                <a href={`mailto:${email}`} className="hover:text-[#F5A623] transition-colors font-mono">
+                <a href={emailHref} className="hover:text-[#F5A623] transition-colors font-mono">
                   {email}
                 </a>
               </div>
@@ -113,14 +111,14 @@ export default function Footer() {
             
             {/* Copyright notes */}
             <div className="text-xs text-gray-500 text-center md:text-left leading-normal">
-              <p>&copy; {currentYear} Công ty Cổ phần Phần mềm và Tư vấn Xây dựng Bắc Nam (BNSC). Bảo lưu mọi quyền.</p>
-              <p className="mt-1">Giấy phép đăng ký kinh doanh số: {s('business_license', '0310892095')} cấp bởi Sở Kế hoạch và Đầu tư TP.HCM.</p>
+              <p>&copy; {currentYear} {s('company_legal_name', settingsFallback.company_legal_name)}. Bảo lưu mọi quyền.</p>
+              <p className="mt-1">Giấy phép đăng ký kinh doanh số: {s('business_license', settingsFallback.business_license)} cấp bởi Sở Kế hoạch và Đầu tư TP.HCM.</p>
             </div>
 
             {/* Social icons line */}
             <div className="flex items-center gap-4">
               <a
-                href={s('social_facebook', 'https://facebook.com')}
+                href={s('social_facebook', settingsFallback.social_facebook)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-[#1877F2] flex items-center justify-center transition-all"
@@ -129,7 +127,7 @@ export default function Footer() {
                 <Facebook className="w-5 h-5" />
               </a>
               <a
-                href={s('social_youtube', 'https://youtube.com')}
+                href={s('social_youtube', settingsFallback.social_youtube)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-[#FF0000] flex items-center justify-center transition-all"
@@ -138,7 +136,7 @@ export default function Footer() {
                 <Youtube className="w-5 h-5" />
               </a>
               <a
-                href={s('social_zalo', 'https://zalo.me')}
+                href={s('social_zalo', settingsFallback.social_zalo)}
                 target="_blank"
                 rel="noopener noreferrer" 
                 className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-sky-400 flex items-center justify-center transition-all font-black text-sm"
@@ -147,7 +145,7 @@ export default function Footer() {
                 <MessageCircle className="w-5 h-5" />
               </a>
               <a 
-                href="mailto:contact@bacnam.com.vn" 
+                href={emailHref}
                 className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-[#F5A623] flex items-center justify-center transition-all"
                 title="Email BNSC"
               >

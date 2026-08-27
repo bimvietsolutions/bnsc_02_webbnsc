@@ -14,11 +14,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Check, ArrowLeft, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 import Seo from '../seo/Seo';
 import { authConfig, authGoogle, authLogin, authMe, loadGoogleScript, safeNextPath } from '../lib/adminAuth';
+import { BRAND_SHORT_NAME, LOGO_ALT, LOGO_PATH } from '../seo/brand';
+import { siteConfig } from '../seo/siteConfig';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = safeNextPath(searchParams.get('next'));
+  /** Tên miền hiển thị ở chân trang, lấy từ cấu hình site thay vì gõ cứng. */
+  const siteHost = new URL(siteConfig.siteUrl).host;
 
   const onBackToHome = () => navigate('/');
   const onRegisterClick = () => navigate('/?modal=register');
@@ -168,12 +172,12 @@ export default function LoginPage() {
             <div className="relative z-10 flex items-center gap-3">
               <div className="w-10 h-10 shrink-0">
                 <img
-                  src="/brand/logo.png"
-                  alt="Bac Nam Logo"
+                  src={LOGO_PATH}
+                  alt={LOGO_ALT}
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className="font-extrabold text-sm tracking-wider uppercase">Bắc Nam Software</span>
+              <span className="font-extrabold text-sm tracking-wider uppercase">{BRAND_SHORT_NAME}</span>
             </div>
 
             <div className="relative z-10 my-auto max-w-md space-y-6">
@@ -239,8 +243,8 @@ export default function LoginPage() {
             <div className="relative z-10 w-full max-w-sm mx-auto mt-[16vh] md:mt-0">
               <div className="text-center mb-6">
                 <img
-                  src="/brand/logo.png"
-                  alt="BNSC Logo"
+                  src={LOGO_PATH}
+                  alt={LOGO_ALT}
                   className="h-16 mx-auto object-contain drop-shadow-sm"
                 />
               </div>
@@ -416,7 +420,7 @@ export default function LoginPage() {
               )}
 
               <div className="mt-12 text-center text-[10px] text-slate-400 font-medium">
-                © 2026 Bắc Nam Software · bacnam.com.vn
+                © {new Date().getFullYear()} {BRAND_SHORT_NAME} · {siteHost}
               </div>
             </div>
           </div>
