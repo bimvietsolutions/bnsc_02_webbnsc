@@ -121,7 +121,7 @@ export const supportFallback: { staff: ApiSupportStaff[]; tools: ApiRemoteTool[]
   staff: [
     { name: 'Kỹ sư Hoàng Lâm', phone: HOTLINE, role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
     { name: 'Kỹ sư Quốc Khánh', phone: HOTLINE, role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
-    { name: 'Kỹ sư Minh Đức', phone: '0903310052', role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
+    { name: 'Kỹ sư Minh Đức', phone: HOTLINE, role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
   ],
   tools: [
     { name: 'UltraViewer (Khuyên dùng)', description: 'Phần mềm điều khiển máy tính xa cực nhẹ, phổ biến nhất tại Việt Nam. Được đội ngũ BNSC sử dụng để cài đặt trực tiếp cho khách hàng.', version: 'v6.6 (Bản mới nhất)', url: 'https://www.ultraviewer.net/vi/download.html', realUrl: null, badge: 'Bao gồm bộ cài sửa lỗi' },

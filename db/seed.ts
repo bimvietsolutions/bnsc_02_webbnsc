@@ -117,7 +117,7 @@ const supportFaqs = [
 const supportStaff = [
   { name: 'Kỹ sư Hoàng Lâm', phone: HOTLINE, role: 'Trưởng bộ phận kỹ thuật', ext: 'Nhánh 1' },
   { name: 'Kỹ sư Quốc Khánh', phone: HOTLINE, role: 'Support BNSC phía Nam', ext: 'Nhánh 2' },
-  { name: 'Kỹ sư Minh Đức', phone: '0903310052', role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
+  { name: 'Kỹ sư Minh Đức', phone: HOTLINE, role: 'Tư vấn Chuyển giao & Đào tạo', ext: 'Nhánh 3' },
 ];
 
 const remoteTools = [

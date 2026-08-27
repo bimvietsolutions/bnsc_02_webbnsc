@@ -356,7 +356,7 @@ export const resourceDefs: ResourceDef[] = [
       { name: 'group', label: 'Nhóm', type: 'badge' },
     ],
     fields: [
-      { name: 'key', label: 'Khóa (key)', type: 'text', required: true, help: 'Không đổi khi đã dùng ở frontend' },
+      { name: 'key', label: 'Khóa (key)', type: 'text', required: true, help: 'Không đổi khi đã dùng ở frontend. Khóa mới chỉ ra được website nếu có tên trong src/lib/settingsKeys.ts — nếu không, giá trị vẫn lưu nhưng API công khai lọc bỏ.' },
       { name: 'label', label: 'Tên hiển thị', type: 'text' },
       { name: 'group', label: 'Nhóm', type: 'text' },
       { name: 'value', label: 'Giá trị', type: 'textarea', full: true },

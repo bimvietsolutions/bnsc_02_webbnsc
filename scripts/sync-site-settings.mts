@@ -21,7 +21,7 @@ import { buildAiSystemPrompt } from '../src/lib/aiPrompt.ts';
 const prisma = new PrismaClient();
 
 /** Các số điện thoại từng lưu hành trước khi thống nhất về HOTLINE. */
-const SO_CU = ['0966965075', '0981757527'];
+const SO_CU = ['0966965075', '0981757527', '0903310052'];
 
 /** Ảnh slide hero đã loại (ảnh kho stock chụp công trường ở Mỹ). */
 const SLIDE_DA_LOAI = [
